@@ -6,7 +6,7 @@ from _thread import *
 server = "10.0.0.211" # used ipconfig getifaddr en0 ... might want to automate
 
 # ports are unsigned 16-bit integers, so the largest port is 65535
-port = 5555 # TODO add something to find open/free ports
+port = 5555 # TODO add something to find open/free ports # TODO error[48] already in use etc..
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 try:
@@ -25,9 +25,9 @@ def threaded_client(connection, address):
 
     connected = True
     while connected:
-        reply = ""
+        reply = "response from the server"
         try:
-            data = connection.recieve(2048) # number of bits corresponds here to 256 bytes
+            data = connection.recv(2048) # number of bits corresponds here to 256 bytes
             decoded_data = data.decode(encoding="utf-8")
 
             if not data:
@@ -38,7 +38,8 @@ def threaded_client(connection, address):
                 print("Sending {}".format(reply))
                 connection.sendall(reply.encode(encoding="utf-8"))
 
-        except:
+        except Exception as exc:
+            print(str(exc))
             break # TODO figure out what to do here; right now we are just trying to avoid infinite loops
     
     connection.close()
@@ -46,7 +47,8 @@ def threaded_client(connection, address):
     return # this will terminate a thread in python
 
 # continually looks for connections
-while True:
+server_is_running = True
+while server_is_running:
     connection, address = sock.accept()
     print ("connected to {}".format(str(address)))
     start_new_thread(threaded_client, (connection, address))
