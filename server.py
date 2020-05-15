@@ -20,18 +20,21 @@ print("Waiting...")
 
 # what to do with a client 
 def threaded_client(connection, address):
-    reply = ""
+    # initial connection message
+    connection.send("Connected".encode("utf-8"))
+
     connected = True
     while connected:
+        reply = ""
         try:
             data = connection.recieve(2048) # number of bits corresponds here to 256 bytes
-            reply = data.decode(encoding="utf-8")
+            decoded_data = data.decode(encoding="utf-8")
 
             if not data:
                 print("{} disconnected".format(str(address)))
                 connected = False
             else:
-                print("Recieved {}".format(reply))
+                print("Recieved {}".format(decoded_data))
                 print("Sending {}".format(reply))
                 connection.sendall(reply.encode(encoding="utf-8"))
 
