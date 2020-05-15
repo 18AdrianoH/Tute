@@ -1,14 +1,13 @@
 # server houses the main gaming logic and keeps track of who's playing
 
 import socket
-import thread
-import sys
+from _thread import *
 
-server = "10.0.0.211" # just happens to be it right now we are gonna have to fix this soon
+server = "10.0.0.211" # used ipconfig getifaddr en0 ... might want to automate
 
 # ports are unsigned 16-bit integers, so the largest port is 65535
-PORT = 5555 # TODO add something to find open/free ports
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+port = 5555 # TODO add something to find open/free ports
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 try:
     sock.bind((server, port))
@@ -38,9 +37,13 @@ def threaded_client(connection, address):
 
         except:
             break # TODO figure out what to do here; right now we are just trying to avoid infinite loops
+    
+    connection.close()
+    print("Closing Thread...")
+    return # this will terminate a thread in python
 
 # continually looks for connections
 while True:
     connection, address = sock.accept()
     print ("connected to {}".format(str(address)))
-    thread.start_new_thread(threaded_client, (connection, address))
+    start_new_thread(threaded_client, (connection, address))
