@@ -7,6 +7,11 @@ WIDTH = 500
 HEIGHT = 500
 COLOR_WHITE = (255, 255, 255)
 
+class Sprite:
+    pass
+class Card(Sprite):
+    pass
+
 window = pg.display.set_mode((WIDTH, HEIGHT))
 pg.display.set_caption("client")
 
