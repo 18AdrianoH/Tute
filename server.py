@@ -1,7 +1,7 @@
 # server houses the main gaming logic and keeps track of who's playing
 
 import socket
-from _thread import *
+import threading
 
 # what to do with a client 
 def threaded_client(connection, address):
@@ -65,8 +65,8 @@ class Server:
 
     def run(self):
         self.running = True
-        start_new_thread(self._run_loop, ())
-
+        loop_thread = threading.Thread(target=self._run_loop)
+        loop_thread.start()
         # at the same time take input until we get the message to quit
         while input() != "quit":
             pass
@@ -75,9 +75,17 @@ class Server:
 
     def _run_loop(self):
         while self.running:
-            connection, address = self.socket.accept()
-            print ("connected to {} who is using port {}".format(address[0], str(address[1])))
-            start_new_thread(threaded_client, (connection, address))
+            try:
+                connection, address = self.socket.accept()
+                print ("connected to {} who is using port {}".format(address[0], str(address[1])))
+                player_thread = threading.Thread(target=threaded_client, args=(connection, address))
+                player_thread.start()
+            except ConnectionAbortedError as err:
+                # this should only be caused by a race condition where we tried to connect after quitting
+                # but before self.running was False so we still did it
+                # a better solution would involve locks but this should be fine for now
+                assert not self.running, "Some other than the connection race condition may have occured"
+        return # threads close when you you return from a function
 
 
 
