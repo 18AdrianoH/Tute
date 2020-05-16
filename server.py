@@ -3,21 +3,6 @@
 import socket
 from _thread import *
 
-server = "10.0.0.211" # used ipconfig getifaddr en0 ... might want to automate
-
-# ports are unsigned 16-bit integers, so the largest port is 65535
-port = 5555 # TODO add something to find open/free ports # TODO error[48] already in use etc..
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-try:
-    sock.bind((server, port))
-except socket.error as socket_error:
-    print(socket_error)
-
-sock.listen(10) # parameter is how many people you want to let in maximum
-print("Started")
-print("Waiting...")
-
 # what to do with a client 
 def threaded_client(connection, address):
     # initial connection message
@@ -46,9 +31,57 @@ def threaded_client(connection, address):
     print("Closing Thread...")
     return # this will terminate a thread in python
 
-# continually looks for connections
-server_is_running = True
-while server_is_running:
-    connection, address = sock.accept()
-    print ("connected to {}".format(str(address)))
-    start_new_thread(threaded_client, (connection, address))
+class Server:
+    # a server will initially figure out what parameters to try and use
+    def __init__(self):
+        self.running = False
+        self.socket = None
+        self.server_ip = None
+        self.port = None
+
+    def get_ip(self):
+        # used ipconfig getifaddr en0 ... might want to automate
+        return "10.0.0.211" 
+    
+    def get_port(self):
+        # ports are unsigned 16-bit integers, so the largest port is 65535
+        return 5555
+
+    def start(self):
+        # do this at start time because otherwise might lose access in the interim
+        self.server_ip = self.get_ip()
+        self.port = self.get_port()
+
+        # we are using a TCP socket I believe with a "connection oriented protocol"
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self.socket.bind((self.server_ip, self.port))
+            self.socket.listen(10) # parameter is how many people you want to let in maximum
+            print("Started server at {} on port {}".format(self.server_ip, str(self.port)))
+            print("Waiting for connections...")
+        except socket.error as socket_error:
+            print("Failed to start server...")
+            print(socket_error)
+
+    def run(self):
+        self.running = True
+        start_new_thread(self._run_loop, ())
+
+        # at the same time take input until we get the message to quit
+        while input() != "quit":
+            pass
+        self.running = False
+        self.socket.close()
+
+    def _run_loop(self):
+        while self.running:
+            connection, address = self.socket.accept()
+            print ("connected to {} who is using port {}".format(address[0], str(address[1])))
+            start_new_thread(threaded_client, (connection, address))
+
+
+
+if __name__ == "__main__":
+    server = Server()
+    server.start()
+    server.run()

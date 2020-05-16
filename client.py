@@ -15,6 +15,7 @@ COLOR_WHITE = (255, 255, 255)
 
 class Network:
     def __init__(self):
+        # followed a tutorial and I think I might change the structure a bit
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server = "10.0.0.211"
         self.port = 5555
