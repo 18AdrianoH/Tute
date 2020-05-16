@@ -2,6 +2,11 @@
 
 import socket
 import threading
+import time
+import structs # game data structures
+
+DEFAULT_IP = "10.0.0.211"
+DEFAULT_PORT = 5555
 
 # server is the executor of our game
 class Server:
@@ -14,29 +19,61 @@ class Server:
 
     def get_ip(self):
         # used ipconfig getifaddr en0 ... might want to automate
-        return "10.0.0.211" 
+        print("Please enter your IP Address. Default: 10.0.0.211")
+        ip = input()
+        if ip == "":
+            ip = DEFAULT_IP
+        return ip
     
     def get_port(self):
         # ports are unsigned 16-bit integers, so the largest port is 65535
-        return 5555
+        print("Please enter a valid port (16 bit unsigned 0 <= integer <= 65535). Default: 5555")
+        port = input()
+        if port == "":
+            port = DEFAULT_PORT
+        return int(port)
 
     def start(self):
-        # do this at start time because otherwise might lose access in the interim
-        self.server_ip = self.get_ip()
-        self.port = self.get_port()
+        not_connected = True
+        tries = 3 # try three times to connect with that ip and that port if possible
 
-        # we are using a TCP socket I believe with a "connection oriented protocol"
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.socket.bind((self.server_ip, self.port))
-            self.socket.listen(10) # parameter is how many people you want to let in maximum
-            print("Started server at {} on port {}".format(self.server_ip, str(self.port)))
-            print("Waiting for connections...")
-        except socket.error as socket_error:
-            print("Failed to start server...")
-            print(socket_error)
+        while not_connected:
+            try:
+                # do this at start time because otherwise might lose access in the interim
+                self.server_ip = self.get_ip()
+                self.port = self.get_port()
+
+                # we are using a TCP socket I believe with a "connection oriented protocol"
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                print("Socket created, trying to connect...")
+
+                for i in range(tries):
+                    print("Try number " + str(i+1))
+                    try:
+                        self.socket.bind((self.server_ip, self.port))
+                        self.socket.listen(10) # parameter is how many people you want to let in maximum
+                        print("Started server at {} on port {}".format(self.server_ip, str(self.port)))
+                        print("Waiting for connections...")
+                        not_connected = False
+                        break
+
+                    except socket.error as socket_error:
+                        print("Failed to start server...")
+                        print(socket_error)
+                        if i == tries - 1:
+                            print("IP/Port aren't available or don't work, try again please")
+                        else:
+                            delta = 5 * (1 << i)
+                            print("Will try to connect again in " + str(delta) + " seconds")
+                            time.sleep(delta) # wait five seconds before we try again
+
+            except TypeError as type_error:
+                print("You entered the wrong types for IP and port. Port should be an integer")
+            except Exception as unknown_error:
+                print("Unknown error, please try again...")
 
     def run(self):
+        print("Running... type \"quit\" to shut it down")
         self.running = True
         loop_thread = threading.Thread(target=self._run_loop)
         loop_thread.start()
