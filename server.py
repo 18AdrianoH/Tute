@@ -3,34 +3,7 @@
 import socket
 import threading
 
-# what to do with a client 
-def threaded_client(connection, address):
-    # initial connection message
-    connection.send("Connected".encode("utf-8"))
-
-    connected = True
-    while connected:
-        reply = "response from the server"
-        try:
-            data = connection.recv(2048) # number of bits corresponds here to 256 bytes
-            decoded_data = data.decode(encoding="utf-8")
-
-            if not data:
-                print("{} disconnected".format(str(address)))
-                connected = False
-            else:
-                print("Recieved {}".format(decoded_data))
-                print("Sending {}".format(reply))
-                connection.sendall(reply.encode(encoding="utf-8"))
-
-        except Exception as exc:
-            print(str(exc))
-            break # TODO figure out what to do here; right now we are just trying to avoid infinite loops
-    
-    connection.close()
-    print("Closing Thread...")
-    return # this will terminate a thread in python
-
+# server is the executor of our game
 class Server:
     # a server will initially figure out what parameters to try and use
     def __init__(self):
@@ -78,7 +51,7 @@ class Server:
             try:
                 connection, address = self.socket.accept()
                 print ("connected to {} who is using port {}".format(address[0], str(address[1])))
-                player_thread = threading.Thread(target=threaded_client, args=(connection, address))
+                player_thread = threading.Thread(target=self.process_response, args=(connection, address))
                 player_thread.start()
             except ConnectionAbortedError as err:
                 # this should only be caused by a race condition where we tried to connect after quitting
@@ -87,6 +60,32 @@ class Server:
                 assert not self.running, "Some other than the connection race condition may have occured"
         return # threads close when you you return from a function
 
+    def process_response(self, connection, address):
+        # initial connection message
+        connection.send("Connected".encode("utf-8"))
+
+        connected = True
+        while connected:
+            reply = "response from the server"
+            try:
+                data = connection.recv(2048) # number of bits corresponds here to 256 bytes
+                decoded_data = data.decode(encoding="utf-8")
+
+                if not data:
+                    print("{} disconnected".format(str(address)))
+                    connected = False
+                else:
+                    print("Recieved {}".format(decoded_data))
+                    print("Sending {}".format(reply))
+                    connection.sendall(reply.encode(encoding="utf-8"))
+
+            except Exception as exc:
+                print(str(exc))
+                break # TODO figure out what to do here; right now we are just trying to avoid infinite loops
+        
+        connection.close()
+        print("Closing Thread...")
+        return # this will terminate a thread in python
 
 
 if __name__ == "__main__":
