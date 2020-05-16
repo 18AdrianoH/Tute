@@ -1,12 +1,12 @@
 import pickle
 import random
+import enum
 
-SUITS = (
-    "bastos", 
-    "copas", 
-    "espadas", 
-    "oros"
-    )
+class Suits(enum.Enum):
+    bastos = 1
+    copas = 2
+    espadas = 3
+    oros = 4
 
 # the size is very small so an array should be fine
 def generate_deck():
@@ -43,7 +43,7 @@ class Card:
         self.value = value
         self.suit = suit
         self.cards = []
-        assert self.suit in SUITS
+        assert type(suit) == Suits
     
     def is_ace(self):
         return self.value == 1

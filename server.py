@@ -3,10 +3,12 @@
 import socket
 import threading
 import time
-import structs # game data structures
+# structs is our custom gaming data structures implementation
+from structs import Tute
 
 DEFAULT_IP = "10.0.0.211"
 DEFAULT_PORT = 5555
+MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 
 # server is the executor of our game
 class Server:
@@ -33,7 +35,10 @@ class Server:
             port = DEFAULT_PORT
         return int(port)
 
-    def start(self):
+    # launches the networking for the server
+    # provides a simple UI with multiple connection tries to the server
+    # just cntrl + c to cancel if you misclicked
+    def start_networking(self):
         not_connected = True
         tries = 3 # try three times to connect with that ip and that port if possible
 
@@ -51,7 +56,7 @@ class Server:
                     print("Try number " + str(i+1))
                     try:
                         self.socket.bind((self.server_ip, self.port))
-                        self.socket.listen(10) # parameter is how many people you want to let in maximum
+                        self.socket.listen(MAX_CONNECTIONS) # parameter is how many people you want to let in maximum
                         print("Started server at {} on port {}".format(self.server_ip, str(self.port)))
                         print("Waiting for connections...")
                         not_connected = False
@@ -71,19 +76,9 @@ class Server:
                 print("You entered the wrong types for IP and port. Port should be an integer")
             except Exception as unknown_error:
                 print("Unknown error, please try again...")
-
-    def run(self):
-        print("Running... type \"quit\" to shut it down")
-        self.running = True
-        loop_thread = threading.Thread(target=self._run_loop)
-        loop_thread.start()
-        # at the same time take input until we get the message to quit
-        while input() != "quit":
-            pass
-        self.running = False
-        self.socket.close()
-
-    def _run_loop(self):
+    
+    # helper for start_listening
+    def listen(self):
         while self.running:
             try:
                 connection, address = self.socket.accept()
@@ -96,6 +91,23 @@ class Server:
                 # a better solution would involve locks but this should be fine for now
                 assert not self.running, "Some other than the connection race condition may have occured"
         return # threads close when you you return from a function
+
+    # will start a loop that will run a loop that allows you to shut down the server
+    # and also at the same time waits for requests from clients to arrive
+    def start_listening(self):
+        print("Running... type \"quit\" to shut it down")
+        self.running = True
+        loop_thread = threading.Thread(target=self.listen)
+        loop_thread.start()
+        # at the same time take input until we get the message to quit
+        while input() != "quit":
+            pass
+        self.running = False
+        self.socket.close()
+
+    def start(self):
+        self.start_networking()
+        self.start_listening()
 
     def process_response(self, connection, address):
         # initial connection message
