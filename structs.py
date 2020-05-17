@@ -41,24 +41,64 @@ import enum
 # 5. ver las cartas del centro en el orden en que se pusieron
 # 6. ver quien es la mano de la ronda
 
+# Important notes for graphics:
+# 1. each player sees themselves at the bottom
+# the rest of the array from their index to the end and then around from the start to the one before them
+# is filled in from left to top to right (i.e. clockwise)
+# 2. whoever is playing will have their name in red, whereas everyone else will have their name in black
+
+"""
+Below, here, is a sort of ascii picture of what I envision
+
+    .__.
+    |__|  | | | | | | | | | | | |
+     #                             .__.
+                                 # |__|
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+——     _1_  _2_  _3_  _4_  P        ——
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+.__.
+|__|  #                       
+                              #
+                             .__.
+    | | | | | | | | | | | |  |__|
+
+I might text for the pictures to expect at the end of the game but it should be very simple:
+basically just a list in the middle of the screen.
+"""
+
 class Suits(enum.Enum):
     bastos = 0
     copas = 1
     espadas = 2
     oros = 3
 
-# Tute waits for all players to connect while waiting for game
-# it will not start until you have four players and
-# once you are playing game 
 class TuteState(enum.Enum):
-    waiting_for_game = 0
-    playing_game = 1
+    waiting_to_start = 0 # waiting for 4 players to connect and be added to data structures
+    waiting_for_game = 1 # waiting for players to acknowledge readiness for beginning of game
+    playing_game = 2 # playing game; after playing game will go back to waiting_for_game
+    end_scores = 3 # show who won and maybe some stats
+    end_winner = 7 # show the winner
+    # after end_winner go to waiting_for game
 
-# game state goes from
-# initialization: picks a random suit, gives out 12 cards to each player, 
 class GameState(enum.Enum):
-    initialization = 0
-
+    init_placing = 0 # pick a random order of players
+    init_suit = 1 # pick a random suit
+    init_shuffle = 2 # shuffle cards and give 12 out to each player
+    init_hand = 3 # pick starting player
+    setting_up_round = 4 # wait for round to start (round is started by previous winner, or if first round by hand)
+    round = 5 # playing round
+    end_scores = 6 # game is over and display scores (maybe some stats too)
+    end_winner = 7 # display winner and update data structures
 
 # the size is very small so an array should be fine
 def generate_deck():
