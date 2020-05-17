@@ -10,6 +10,7 @@ For me the goal of the game is as such (i.e. what I'm learning): it will be a ga
 * Clients have a gui where you can click on a card to play it and so on
 * It can be played from two to four players and a server where the server is on a different network from the users
 * All packets sent to and from are encrypted so that the game is secure (and I practice this)
+* Checkpoint game-states to a file in case of a crash (i.e. save/load games)
 
 To make the second point work I intend to have it so that you can click to select a card and then click to move it to another spot. The cards will be alligned left to right for you on the bottom and you will see some card backs for the other players going in a circle. To keep it simple I'll have it display first on the left, then in front, then in a circle around a square table. Cards that are down you can see on the middle of the table.
 
@@ -20,3 +21,7 @@ To make the third point I need to make a port forward script from the router. I 
 ## Notes As Of May 16, 2020
 I will simplify this process by making it a hard-coded port-forward and by additionally making it so that it only supports
 four players.
+
+The way the game works is the middle has three cards from left to right in three spots. Each player will have the max cards possible such that everyone has equal cards (note that this should be 12 for four players). A random suit is picked before each round. We will proceed for three games which each consists of many rounds.
+
+I also want it to be possible to put settings for some basic rule changes in a file that you can edit.
