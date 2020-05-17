@@ -7,6 +7,10 @@ import enum
 # (40s is mismo palo del de la ronda tambien y 20s es otro palo; pero igual tenes que ganar)
 # tute es quatro reyes o quatro caballos -> ganas el juego completo
 
+# antes de conectarse Tute tiene que mostrar:
+# 1. cuantos jugadores hay
+# 2. quien esta jugando
+
 # cada junta de juegos se juegan tres juegos, pero si alguien tiene tute gana todo
 
 # cada juego se:
@@ -43,9 +47,18 @@ class Suits(enum.Enum):
     espadas = 2
     oros = 3
 
+# Tute waits for all players to connect while waiting for game
+# it will not start until you have four players and
+# once you are playing game 
+class TuteState(enum.Enum):
+    waiting_for_game = 0
+    playing_game = 1
+
+# game state goes from
+# initialization: picks a random suit, gives out 12 cards to each player, 
 class GameState(enum.Enum):
-    waiting_for_players = 0
-    playing = 1
+    initialization = 0
+
 
 # the size is very small so an array should be fine
 def generate_deck():
@@ -56,6 +69,7 @@ def generate_deck():
 class Tute:
     def __init__(self):
         self.players = []
+        self.num_games = 3
     
     # add a player if a player with that id is not already present
     def add_player(self, player_id):
@@ -67,8 +81,15 @@ class Tute:
         self.players.append(player)
         return True
     
-    def give_out_hands():
+    
+
+# there are three games in Tute
+class Game:
+    def __init__(self):
         pass
+    def give_out_hands(self):
+        pass
+    pass
     
 class Player:
     def __init__(self, id):
