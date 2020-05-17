@@ -3,10 +3,14 @@ import random
 import enum
 
 class Suits(enum.Enum):
-    bastos = 1
-    copas = 2
-    espadas = 3
-    oros = 4
+    bastos = 0
+    copas = 1
+    espadas = 2
+    oros = 3
+
+class GameState(enum.Enum):
+    waiting_for_players = 0
+    playing = 1
 
 # the size is very small so an array should be fine
 def generate_deck():

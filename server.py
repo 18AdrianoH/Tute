@@ -76,7 +76,11 @@ class Server:
                 print("You entered the wrong types for IP and port. Port should be an integer")
             except Exception as unknown_error:
                 print("Unknown error, please try again...")
-    
+   
+   # begin the game of Tute in the waiting for "log in phase"
+    def start_game(self):
+        pass
+
     # helper for start_listening
     def listen(self):
         while self.running:
@@ -107,6 +111,7 @@ class Server:
 
     def start(self):
         self.start_networking()
+        self.start_game()
         self.start_listening()
 
     def process_response(self, connection, address):
@@ -140,4 +145,3 @@ class Server:
 if __name__ == "__main__":
     server = Server()
     server.start()
-    server.run()

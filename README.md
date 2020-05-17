@@ -16,3 +16,7 @@ To make the second point work I intend to have it so that you can click to selec
 To make clicking easier I have to consider whether to make this full screen and hard-code screen positions or do relative positions. I'd highly prefer relative positions if this is possible.
 
 To make the third point I need to make a port forward script from the router. I intend to use this primarily on my Pi so I'll try to write a script if possible for automatic UPnP or something along those lines. If that's not possible then Ill just hard-code it for myself and to think about security I'll have to think about what I publish to github.
+
+## Notes As Of May 16, 2020
+I will simplify this process by making it a hard-coded port-forward and by additionally making it so that it only supports
+four players.
