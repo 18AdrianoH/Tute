@@ -6,7 +6,7 @@ import time
 # structs is our custom gaming data structures implementation
 from structs import Tute
 
-DEFAULT_IP = "10.0.0.211"
+DEFAULT_IP = "" # empty string will become whichever ip is available
 DEFAULT_PORT = 5555
 MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 
@@ -21,7 +21,7 @@ class Server:
 
     def get_ip(self):
         # used ipconfig getifaddr en0 ... might want to automate
-        print("Please enter your IP Address. Default: 10.0.0.211")
+        print("Please enter your IP Address or click enter for the default.")
         ip = input()
         if ip == "":
             ip = DEFAULT_IP
@@ -29,7 +29,7 @@ class Server:
     
     def get_port(self):
         # ports are unsigned 16-bit integers, so the largest port is 65535
-        print("Please enter a valid port (16 bit unsigned 0 <= integer <= 65535). Default: 5555")
+        print("Please enter a valid port or click enter for the default (5555).")
         port = input()
         if port == "":
             port = DEFAULT_PORT

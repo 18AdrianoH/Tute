@@ -25,3 +25,6 @@ four players.
 The way the game works is the middle has three cards from left to right in three spots. Each player will have the max cards possible such that everyone has equal cards (note that this should be 12 for four players). A random suit is picked before each round. We will proceed for three games which each consists of many rounds.
 
 I also want it to be possible to put settings for some basic rule changes in a file that you can edit.
+
+## Update As of May 17, 2020
+I'm probably going to host this on the cloud. A tutorial I sort of followed at "https://www.youtube.com/watch?v=KQasIwElg3w&list=PLzMcBGfZo4-kR7Rh-7JCVDN8lm3Utumvq&index=10" used linude and gave us some free credits potentially so I might just use linude, but AWS is also an option.

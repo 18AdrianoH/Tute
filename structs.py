@@ -100,6 +100,10 @@ class GameState(enum.Enum):
     end_scores = 6 # game is over and display scores (maybe some stats too)
     end_winner = 7 # display winner and update data structures
 
+# where cards are since there are only a set number of such places
+class CardPosition(enum.Enum):
+    pass
+
 # the size is very small so an array should be fine
 def generate_deck():
     array = [Card(val, suit) for val in range(1,13) for suit in SUITS]
@@ -150,7 +154,7 @@ class Card:
         self.suit = suit
         assert type(suit) == Suits
 
-        self.front_image = self.load_image("./cartas-españolas/"+str(self.suit.value)+"_"+str(self.value)+".jpg")
+        self.front_image = pygame.image.load("./cartas-españolas/"+str(self.suit.value)+"_"+str(self.value)+".jpg")
         self.back_image = pygame.image.load("./cartas-españolas/back.jpg")
     
     def is_ace(self):

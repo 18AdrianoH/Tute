@@ -7,51 +7,78 @@
 # and it will have a simple installer to install python and the necessary dependencies on mac, windows, or linux
 
 import pygame
-import socket
+import random
 
-WIDTH = 500
-HEIGHT = 500
+from structs import Suits
+from network import Network
+
+WIDTH = 1280
+HEIGHT = 720
 COLOR_WHITE = (255, 255, 255)
 
-class Network:
-    def __init__(self):
-        # followed a tutorial and I think I might change the structure a bit
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = "10.0.0.211"
-        self.port = 5555
-        self.id = self.connect()
+CARD_WIDTH = int(201/1.5)
+CARD_HEIGHT = int(279/1.5)
 
-    def connect(self):
-        try:
-            self.client.connect((self.server, self.port))
-        except Exception as exc:
-            print("Failed to Connect, exception information below.")
-            print(str(exc))
-        return self.client.recv(2048).decode(encoding="utf-8")
-    
-    def quit(self):
-        self.client.close()
-    
-    def send(self, data):
-        try:
-            self.client.send(data.encode(encoding="utf-8"))
-        except socket.error as err:
-            print(err)
-        return self.client.recv(2048).decode()
+# default images for the rotated card backs that we will show for other players
+CARD_BACK_LEFT_IMG = pygame.transform.rotate(pygame.transform.scale(pygame.image.load("./cartas-españolas/back.jpg"), (CARD_WIDTH, CARD_HEIGHT)),270)
+CARD_BACK_TOP_IMG = pygame.transform.rotate(pygame.transform.scale(pygame.image.load("./cartas-españolas/back.jpg"), (CARD_WIDTH, CARD_HEIGHT)),180)
+CARD_BACK_RIGHT_IMG = pygame.transform.rotate(pygame.transform.scale(pygame.image.load("./cartas-españolas/back.jpg"), (CARD_WIDTH, CARD_HEIGHT)),90)
 
-window = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("client")
+class CardSprite:
+    # suits that are possible in Tute are: bastos, copas, espadas, oros
+    # for more generality add width and hegiht options
+    def __init__(self, value, suit, x=None, y=None):
+        self.value = value
+        assert type(value) == int
+        self.suit = suit
+        assert type(suit) == Suits
+
+        self.front_image = pygame.image.load("./cartas-españolas/"+str(self.suit.value)+"_"+str(self.value)+".jpg")
+        self.back_image = pygame.image.load("./cartas-españolas/back.jpg")
+
+        self.front_image = pygame.transform.scale(self.front_image, (CARD_WIDTH, CARD_HEIGHT))
+        self.back_image = pygame.transform.scale(self.back_image, (CARD_WIDTH, CARD_HEIGHT))
+
+        self.x = x
+        self.y = y
+    
+    def is_ace(self):
+        return self.value == 1
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.value == other.value and self.suit == other.suit
+    
+    def display_front(self, window): # if None and None then will bitch about needing initialization
+        window.blit(self.front_image, (self.x, self.y)) 
 
 def draw(window, color):
     window.fill(color)
     pygame.display.update()
 
 def main(client_id=0):
+    hand_size = 12
+    starting_x = 0
+    starting_y = HEIGHT - CARD_HEIGHT
+
+    left_back_x = WIDTH//2 - CARD_WIDTH//2
+    left_back_y = 0
+    top_back_x = 0
+    top_back_y = HEIGHT//2 - CARD_WIDTH//2
+    right_back_x = WIDTH - CARD_HEIGHT
+    right_back_y = HEIGHT//2 - CARD_WIDTH//2
+
+    cards = [CardSprite(i,j) for i in range(1,13) for j in Suits]
+    random.shuffle(cards)
+
+    my_cards = cards[:hand_size] # take the first 12 cards for myself
+    for i in range(hand_size):
+        my_cards[i].x = starting_x + (CARD_WIDTH//2) * i # they will overlap by half
+        my_cards[i].y = starting_y # they all will have the same y since they are in the bottom showwing
+    
     net = Network()
 
     running = True
     while running:
-        draw(window, COLOR_WHITE)
         for event in pygame.event.get():
             # user can quit just by closing the window
             if event.type == pygame.QUIT:
@@ -59,9 +86,28 @@ def main(client_id=0):
                 pygame.display.quit()
                 net.quit()
                 pygame.quit()
+            
             # we set it up for testing so that if you set up a space-bar you send a request
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 net.send("request from client with id {}".format(str(client_id)))
-    
+        
+        # draw the empty board
+        draw(window, COLOR_WHITE)
+
+        # draw my cards faceup so I know what I have
+        for card in my_cards:
+            card.display_front(window)
+
+        # display their placeholder cards that show they have cards still
+        window.blit(CARD_BACK_LEFT_IMG, (left_back_x, left_back_y))
+        window.blit(CARD_BACK_TOP_IMG, (top_back_x, top_back_y))
+        window.blit(CARD_BACK_RIGHT_IMG, (right_back_x, right_back_y))
+
+        # update
+        pygame.display.update()
+
+# main
 if __name__ == "__main__":
+    window = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("client")
     main(client_id=0)
