@@ -1,5 +1,8 @@
 import socket
 
+"""
+This class is used exclusively by client.py
+"""
 class Network:
     def __init__(self):
         # followed a tutorial and I think I might change the structure a bit
@@ -21,7 +24,7 @@ class Network:
     
     def send(self, data):
         try:
-            self.client.send(data.encode(encoding="utf-8"))
+            self.client.send(data.encode(encoding="utf-8")) # data is a string lul
         except socket.error as err:
             print(err)
         return self.client.recv(2048).decode()

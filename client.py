@@ -1,3 +1,32 @@
+"""
+As of June 4th 2020 we are making an MVP. This means it has to work and be the easiest implementation for me possible.
+However, I intend to have graphics.
+
+This will be the control scheme: 1-n (if you have n cards) will deploy card x if you press key x (if n is mod 10 then - then =)
+On the right it will show card codes for the cards you have acquired (in text), for others it will display 
+the number of cards they have acquired. It will only let you play cards that are legal (by remembering
+the face and value of last one and face for the game, might actually not do this yet)
+In the middle it will display all cards from LEFT TO RIGHT and decide the winner
+Card codes:
+type_face where face is either B (bastos), C (copas), E (espadas), or O (oros) and type is:
+A for ace, R for rey, C for caballo, S for sota and numbers for the rest
+players will count their points up at the end each and tell the server (this can be commandline or something)
+To sing the 40s or 20s they can reveal cards to reveal cards they can press q,w,e,r,...[,] (under the numbers)
+they press again to hide (they'll have to keep track of their points)
+
+ex for cards:
+A_B is the ace of bastos
+R_O is the king of oros
+3_E is the 3 of espadas
+7_C is the 7 of copas (no vale nada)
+
+
+SPACE BAR WILL BE USED TO CHANGE STATE
+
+MVP HAS NO SECURITY CONSIDERATIONS...
+IN THE FUTURE WE WILL HAVE TO ENCRYPT USING OPENSSL ETC...
+"""
+
 # un juego de tute para jugar online con la familia
 # client has some basic functionality for displaying cards and helping you make choices which are then sent to the server
 
@@ -13,6 +42,8 @@ import random
 
 from structs import Suits
 from network import Network
+
+############################ KEY GRAPHICS FUNCTIONALITY ###################
 
 WIDTH = 1280
 HEIGHT = 720
@@ -112,6 +143,89 @@ def draw(window, color):
     window.fill(color)
     pygame.display.update()
 
+###################### KEY GAMEPLAY FUNCTIONALITY ######################
+
+# higher numbers mean that card will win
+# there are 12 cards per face/suit
+card_type_order = {
+    'A':11,
+    '3':10,
+    'R':9,
+    'C':8,
+    'S':7,
+    '9':6,
+    '8':5,
+    '7':4,
+    '6':3,
+    '5':2,
+    '4':1,
+    '3':0,
+}
+
+# more efficient way to generate exists lol
+use_keycodes = {
+    '1':0,
+    '2':1,
+    '3':2,
+    '4':3,
+    '5':4,
+    '6':5,
+    '7':6,
+    '8':7,
+    '9':8,
+    '10':9,
+    '11':10,
+    '12':11,
+}
+reveal_keycodes = {
+    'q':0,
+    'w':1,
+    'e':2,
+    'r':3,
+    't':4,
+    'y':5,
+    'u':6,
+    'i':7,
+    'o':8,
+    'p':9,
+    '[':10,
+    ']':11,
+}
+
+# return if the first (challenger) is > defender
+# format is as defined above
+# game_face is the face we are using in the game
+# return None if neither wins (we'll let the first player instead in that case)
+def compare_key_strings(challenger, defender, game_face, round_face):
+    val1, face1 = challenger.split("_")
+    val2, face2 = defender.split("_")
+    if face1 == face2:
+        assert val1 != val2 # whoopsies
+        return card_type_order[face1] > card_type_order[face2]
+    elif face1 == game_face and face2 != game_face:
+        return True # challenger win
+    elif face2 == game_face and face1 != game_face:
+        return False # defender win
+    elif face1 == round_face and face2 != round_face:
+        return True # challenger win
+    elif face2 == round_face and face1 != round_face:
+        return False # defender win
+    else:
+        # neither is game_face and neither is round_face so we will return none
+        # in practice this will never be returned as you'll see below
+        # in this case the first card down wins
+        return None
+
+# will go from card 0 (first placed) to card n (of length n card_list) (last placed) and return the index
+# for the card that wins
+def get_winner(card_list, game_face, round_face):
+    assert len(card_list) > 0
+    winner = 0
+    for i in range(1,len(card_list)):
+        if compare_key_strings(card_list[i], card_list[winner], game_face, round_face):
+            winner = i
+    return i
+
 def main(client_id=0):
     player_sp = PlayerSprites()
     net = Network()
@@ -129,6 +243,9 @@ def main(client_id=0):
             # we set it up for testing so that if you set up a space-bar you send a request
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 net.send("request from client with id {}".format(str(client_id)))
+            elif event.type == pygame.KEYDOWN:
+
+                pass
         
         # draw the empty board
         draw(window, COLOR_WHITE)

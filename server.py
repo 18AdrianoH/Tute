@@ -1,14 +1,117 @@
 # server houses the main gaming logic and keeps track of who's playing
 
+# messages to server are 
+# CONNECT <username>
+# PLAY <card>
+
 import socket
 import threading
 import time
-# structs is our custom gaming data structures implementation
-from structs import Tute
+import random
 
 DEFAULT_IP = "10.0.0.211" # empty string will become whichever ip is available
 DEFAULT_PORT = 5555
 MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
+
+FACES = ("B", "E", "C", "O")
+VALUES = ("A", "R", "C", "S", "9", "8", "7", "6", "5", "4", "3", "2")
+
+def get_cards():
+    cards = [face + "_" + value for face in FACES for value in VALUES]
+    random.shuffle(cards)
+    return cards
+
+def split_cards():
+    # there are a total of 48 cards
+    return cards[:12], cards[12:24], cards[24:36], cards[36:]
+
+players = [] # go in this order
+
+class Player:
+    def __init__(self, id):
+        # your id is a string
+        assert type(id) == str
+        self.id = id
+
+        self.cards = []
+    
+    def has(self, card):
+        return card in self.cards
+
+# Tute states are
+# WAITING # waiting for players
+# WAITING_P1 # waiting for player 1 to play
+# WAITING_P2 # waiting for player 2 to play
+# WAITING_P3 # waiting for player 3 to play
+# WAITING_P4 # waiting for player 4 to play
+# TERMINAL # game has ended players now count points, can restart game now
+class Tute:
+    def __init__(self, players):
+        ############################ STATE MACHINE #######################
+        self.state = "WAITING" # initially in waiting state
+        self.round_num = 0
+        # play states are always randomized
+        self.play_states = ["WAITING_P1", "WAITING_P2", "WAITING_P3", "WAITING_P4"]
+        random.shuffle(play_states) # decide order of play
+        # if we want to re-initialize just use previous players
+        self.players = [None, None, None, None] if players is None else players
+        self.player_index = 0
+        self.play_state_index = 0
+        ############################
+    
+    # add a player if a player with that id is not already present
+    def add_player(self, player_id):
+        num_player = 0 # i.e. player 1
+        for player in self.players:
+            if player is not None:
+                if player == player_id: # assume "player" is a string
+                    return False
+                # else
+                num_player += 1
+        
+        assert num_player < 4 # lul
+
+        index = 0 # for player inside the players array
+        insert_index = 0
+        for player in self.play_states:
+            player_num = int(player[-1]) - 1
+            if player_num == num_player:
+                insert_index = index
+                break
+            index += 1
+        
+        self.players(insert_index) = player_id
+        return True
+    
+    # start the game after we are waiting for players
+    # called after we have all four players
+    def start_game(self):
+        assert not players.contains(None) # will have the four names of the four people
+        assert self.state == "WAITING"
+        self.state = self.play_states[0]
+        self.round_num = 1 # start at 1
+        # self.state is now WAITING_PX for some X so taking [-1] is the last element
+        self.player_index = int(self.state[-1]) - 1 # will always index by one so -1
+        self.play_state_index = 0
+    
+    # this should only be called when 
+    def increment_state(self):
+        # if we are still in the same round
+        if self.play_state_index < 3:
+            self.play_state_index += 1
+            self.player_index = int(self.state[-1]) - 1
+        # if we are going to a new round
+        elif self.round_num < 12: # 12 rounds at the last round it will be over
+            self.round_num += 1
+            self.play_state_index = 0
+            self.state = self.play_states[0] # TODO FIX THIS SO THAT THE WINNER GOES FIRST
+        else:
+            # this is basically all that needs to be done, now players 
+            self.state = "TERMINAL" # we will be in the terminal state
+    
+    # for the next game
+    def reset_game(self):
+        self.__init__(self.players) # list of names
 
 # server is the executor of our game
 class Server:
@@ -18,6 +121,7 @@ class Server:
         self.socket = None
         self.server_ip = None
         self.port = None
+        self.game = Tute()
 
     def get_ip(self):
         # used ipconfig getifaddr en0 ... might want to automate
@@ -76,10 +180,6 @@ class Server:
                 print("You entered the wrong types for IP and port. Port should be an integer")
             except Exception as unknown_error:
                 print("Unknown error, please try again...")
-   
-   # begin the game of Tute in the waiting for "log in phase"
-    def start_game(self):
-        pass
 
     # helper for start_listening
     def listen(self):
