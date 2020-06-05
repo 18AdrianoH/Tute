@@ -28,3 +28,13 @@ I also want it to be possible to put settings for some basic rule changes in a f
 
 ## Update As of May 17, 2020
 I'm probably going to host this on the cloud. A tutorial I sort of followed at "https://www.youtube.com/watch?v=KQasIwElg3w&list=PLzMcBGfZo4-kR7Rh-7JCVDN8lm3Utumvq&index=10" used linude and gave us some free credits potentially so I might just use linude, but AWS is also an option.
+
+## Update As of June 5th 2020
+Started working on this last night again for the first time since May 17. I am scrapping the elegant OOP of structs for now. I will make an implementation with barely any OOP, no security for sockets, and no thread safety in the code. Once I get this to work with a nice sequential game I'll add all of those things later if I feel so compelled. I just want to be able to play with Delia once So Things to fix later:
+
+1. finish adding proper oop (make classes for player, etc.... that are actually used, pickle)
+2. add checks for errors where people make mistakes (try catch and just more ifs)
+3. add thread safety (locks)
+4. add openSSL for some sort of RSA or diffie helman for secure transmission (openSSL or quic etc...)
+5. add support for more/less than 4 players
+6. add more responsivity to controls and instead of using keys control actions with mouse

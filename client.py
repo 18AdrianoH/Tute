@@ -192,40 +192,6 @@ reveal_keycodes = {
     ']':11,
 }
 
-# return if the first (challenger) is > defender
-# format is as defined above
-# game_face is the face we are using in the game
-# return None if neither wins (we'll let the first player instead in that case)
-def compare_key_strings(challenger, defender, game_face, round_face):
-    val1, face1 = challenger.split("_")
-    val2, face2 = defender.split("_")
-    if face1 == face2:
-        assert val1 != val2 # whoopsies
-        return card_type_order[face1] > card_type_order[face2]
-    elif face1 == game_face and face2 != game_face:
-        return True # challenger win
-    elif face2 == game_face and face1 != game_face:
-        return False # defender win
-    elif face1 == round_face and face2 != round_face:
-        return True # challenger win
-    elif face2 == round_face and face1 != round_face:
-        return False # defender win
-    else:
-        # neither is game_face and neither is round_face so we will return none
-        # in practice this will never be returned as you'll see below
-        # in this case the first card down wins
-        return None
-
-# will go from card 0 (first placed) to card n (of length n card_list) (last placed) and return the index
-# for the card that wins
-def get_winner(card_list, game_face, round_face):
-    assert len(card_list) > 0
-    winner = 0
-    for i in range(1,len(card_list)):
-        if compare_key_strings(card_list[i], card_list[winner], game_face, round_face):
-            winner = i
-    return i
-
 def main(client_id=0):
     player_sp = PlayerSprites()
     net = Network()
@@ -244,7 +210,6 @@ def main(client_id=0):
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 net.send("request from client with id {}".format(str(client_id)))
             elif event.type == pygame.KEYDOWN:
-
                 pass
         
         # draw the empty board
