@@ -5,6 +5,7 @@
 import pygame
 import random # TODO remove, this is done by the server
 
+# TODO we have to display their look somewhere
 """
     .__.
     |__|  | | | | | | | | | | | |
@@ -28,6 +29,35 @@ import random # TODO remove, this is done by the server
                              .__.
     | | | | | | | | | | | |  |__|
 """
+# more efficient way to generate exists lol
+use_keycodes = {
+    '1':0,
+    '2':1,
+    '3':2,
+    '4':3,
+    '5':4,
+    '6':5,
+    '7':6,
+    '8':7,
+    '9':8,
+    '10':9,
+    '11':10,
+    '12':11,
+}
+reveal_keycodes = {
+    'q':0,
+    'w':1,
+    'e':2,
+    'r':3,
+    't':4,
+    'y':5,
+    'u':6,
+    'i':7,
+    'o':8,
+    'p':9,
+    '[':10,
+    ']':11,
+}
 
 WIDTH = 1280
 HEIGHT = 720

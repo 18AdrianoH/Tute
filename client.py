@@ -22,53 +22,6 @@ def draw(window, color):
 
 ###################### KEY GAMEPLAY FUNCTIONALITY ######################
 
-# higher numbers mean that card will win
-# there are 12 cards per face/suit
-card_type_order = {
-    'A':11,
-    '3':10,
-    'R':9,
-    'C':8,
-    'S':7,
-    '9':6,
-    '8':5,
-    '7':4,
-    '6':3,
-    '5':2,
-    '4':1,
-    '3':0,
-}
-
-# more efficient way to generate exists lol
-use_keycodes = {
-    '1':0,
-    '2':1,
-    '3':2,
-    '4':3,
-    '5':4,
-    '6':5,
-    '7':6,
-    '8':7,
-    '9':8,
-    '10':9,
-    '11':10,
-    '12':11,
-}
-reveal_keycodes = {
-    'q':0,
-    'w':1,
-    'e':2,
-    'r':3,
-    't':4,
-    'y':5,
-    'u':6,
-    'i':7,
-    'o':8,
-    'p':9,
-    '[':10,
-    ']':11,
-}
-
 def main(client_id=0):
     player_sp = PlayerSprites()
     net = Network()
