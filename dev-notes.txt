@@ -109,3 +109,11 @@ SPACE BAR WILL BE USED TO CHANGE STATE
 MVP HAS NO SECURITY CONSIDERATIONS...
 IN THE FUTURE WE WILL HAVE TO ENCRYPT USING OPENSSL ETC...
 """
+
+Yes I know that the encryption scheme is braindead and a bit busted. For a real game I'd use quic which I think is encrypted
+or learn to use openSSL or something. I'm doing it this way so with a vanilla install of python it will work
+(otherwise I need to get quic or openSSL or Cryptography) which might be annoying given some people are on pc, some are
+on mac, and this is going to be used by people who might not be very technologically savvy.
+
+Notes to self: don't hardcode in Droplet IP ever because it will show in logs once you make this project public. The internal IP
+of my laptop inside my house is fine though (obviously because NAT).

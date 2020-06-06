@@ -10,7 +10,6 @@
 # TODO remove
 import random
 
-from tute import Suits
 from gui import CardSprite, PlayerSprites
 from network import Network
 
