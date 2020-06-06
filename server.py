@@ -10,7 +10,7 @@ import threading
 import time
 import random
 
-from structs import Tute
+from tute import Tute # TODO
 
 DEFAULT_IP = "10.0.0.211" # empty string will become whichever ip is available
 DEFAULT_PORT = 5555

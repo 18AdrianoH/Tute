@@ -1,32 +1,3 @@
-"""
-As of June 4th 2020 we are making an MVP. This means it has to work and be the easiest implementation for me possible.
-However, I intend to have graphics.
-
-This will be the control scheme: 1-n (if you have n cards) will deploy card x if you press key x (if n is mod 10 then - then =)
-On the right it will show card codes for the cards you have acquired (in text), for others it will display 
-the number of cards they have acquired. It will only let you play cards that are legal (by remembering
-the face and value of last one and face for the game, might actually not do this yet)
-In the middle it will display all cards from LEFT TO RIGHT and decide the winner
-Card codes:
-type_face where face is either B (bastos), C (copas), E (espadas), or O (oros) and type is:
-A for ace, R for rey, C for caballo, S for sota and numbers for the rest
-players will count their points up at the end each and tell the server (this can be commandline or something)
-To sing the 40s or 20s they can reveal cards to reveal cards they can press q,w,e,r,...[,] (under the numbers)
-they press again to hide (they'll have to keep track of their points)
-
-ex for cards:
-A_B is the ace of bastos
-R_O is the king of oros
-3_E is the 3 of espadas
-7_C is the 7 of copas (no vale nada)
-
-
-SPACE BAR WILL BE USED TO CHANGE STATE
-
-MVP HAS NO SECURITY CONSIDERATIONS...
-IN THE FUTURE WE WILL HAVE TO ENCRYPT USING OPENSSL ETC...
-"""
-
 # un juego de tute para jugar online con la familia
 # client has some basic functionality for displaying cards and helping you make choices which are then sent to the server
 
