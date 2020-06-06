@@ -23,15 +23,13 @@ CARD_VALUE = {'A' : 11,'3' : 10,'R' : 4,'C' : 3,'S' : 2,'9' : 0, '8' : 0, '7' : 
 # return a dict representation of a tute game
 def to_dict(game):
     pass
-# return a tute game from a dict representation of the game
-def from_dict(game):
-    pass
 # serialize a game dict into bits to be sent
-def serialize(game):
+def serialize_dict(game):
     pass
-# desertialize bits into a game dict
-def deserialize(bits):
-    pass
+
+# potentially useful to reconstruct game instances
+#def from_dict(game)
+#def deserialize_dict(bits)
 
 class InvalidAction(Exception):
     pass # tried to do something not allowed

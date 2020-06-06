@@ -6,10 +6,7 @@
 # it will have basic timers to make sure people don't take too long
 # and it will have a simple installer to install python and the necessary dependencies on mac, windows, or linux
 
-
-# TODO remove
-import random
-
+# from tute import *
 from gui import CardSprite, PlayerSprites
 from network import Network
 
