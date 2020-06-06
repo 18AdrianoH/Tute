@@ -52,8 +52,9 @@ class Tute:
 
         self.player_points = {}
         self.player_cards = {}
-        self.player_cards_state = {} # a card is either HIDDEN, REVEALED, or BURNED (a string)
+        self.player_cards_state = {} # a card is either True or False for revealed or hidden
         self.player_won_cards = {}
+        self.player_won_cards_state = {}
 
         # used in rounds to keep track of who played what
         self.cards_played_by = None
@@ -61,21 +62,7 @@ class Tute:
         self.round_finised = None
         self.turn_finished = None
     
-    # Add a player if we are in the WAITING state
-    def add_player(self, player_id):
-        if self.state == 'WAITING':
-            if len(self.player_order) == 4:
-                raise InvalidAction('Already have four players.')
-            elif player_id in player_order:
-                raise InvalidAction('Player already joined.')
-            else:
-                self.player_order.append(player_id)
-                self.player_points[player_id] = 0
-                self.player_cards[player_id] = None # init when we start the game
-                self.player_cards_state[player_id] = None #init when we start the game
-                self.player_won_cards[player_id] = None # init when we start the game
-        else:
-            raise InvalidAction('Can only add players in the WAITING state.')
+    ########## Helper functionality ##########
 
     # Return the player whose turn it is
     def get_turn_player(self):
@@ -100,8 +87,11 @@ class Tute:
             self.player_cards[player] = player_cards
 
             self.player_cards_state[player] = {}
+            self.player_won_cards_state[player] = {}
+
+            # a thing of note: once we use a card we REMOVE from the datastructure so no 'invalid' state
             for card in player_cards:
-                self.player_cards_state[player][card] = 'HIDDEN'
+                self.player_cards_state[player][card] = False
             
             self.player_won_cards[player] = []
         
@@ -187,14 +177,31 @@ class Tute:
     def reset_game(self):
         self.init_game()
 
+    # reset for when you just finished a game
     def play_again(self):
         if self.state == 'TERMINAL':
             self.increment_state()
         else:
             raise InvalidAction('Cannot play again until game is over')
     
-    # should only be able to play card_str that is there -> in client
-    def play_card(self, player_id, card_str):
+    # Add a player if we are in the WAITING state
+    def add_player(self, player_id):
+        if self.state == 'WAITING':
+            if len(self.player_order) == 4:
+                raise InvalidAction('Already have four players.')
+            elif player_id in player_order:
+                raise InvalidAction('Player already joined.')
+            else:
+                self.player_order.append(player_id)
+                self.player_points[player_id] = 0
+                self.player_cards[player_id] = None # init when we start the game
+                self.player_cards_state[player_id] = None #init when we start the game
+                self.player_won_cards[player_id] = None # init when we start the game
+        else:
+            raise InvalidAction('Can only add players in the WAITING state.')
+    
+    # Plays a card that player_id (player) has
+    def play_card(self, player_id, card):
         assert self.state in self.play_states # make sure we are in a round
         assert self.players[self.player_index] == player_id # make sure the right player is going (i.e. their turn)
         self.player_cards[player].remove(card_str)
@@ -206,6 +213,22 @@ class Tute:
         # if it's the first card played it determines the face for the round
         if self.round_face = None:
             self.round_face = card_str[2] # 3rd thing is the face
+    
+    # Reveal a card the player with player_id has (precondition that he/she has it)
+    # this is a toggle method so it will hide if revealed
+    def reveal_card(self, player_id, card):
+        if card in self.player_cards[player_id]:
+            self.player_cards_state[player_id][card] = not self.player_cards_state[player_id][card]
+        else:
+            raise InvalidAction('{} does not have card {}'.format(player_id, card))
+    
+    # reveal a card that the player with player_id has already won (because graphics differ)
+    # this is a toggle method so it will hide if revealed
+    def reveal_won_card(self, player_id, card):
+        if card in self.player_won_cards[player_id]:
+            self.player_won_cards_state[player_id][card] = not self.player_won_cards_state[player_id][card]
+        else:
+            raise InvalidAction('{} has not won card {}'.format(player_id, card))
 
 ########## Below are helpful methods used above ##########
 
