@@ -1,4 +1,5 @@
 import random
+import json
 
 ########## Constants #########
 
@@ -22,14 +23,16 @@ CARD_VALUE = {'A' : 11,'3' : 10,'R' : 4,'C' : 3,'S' : 2,'9' : 0, '8' : 0, '7' : 
 
 # return a dict representation of a tute game
 def to_dict(game):
-    pass
+    game_dict = {}
+    return game_dict
 # serialize a game dict into bits to be sent
-def serialize_dict(game):
-    pass
+def serialize_dict(game_dict):
+    return json.dumps(game_dict)
+def deserialize_dict(bits):
+    return json.loads(bits)
 
 # potentially useful to reconstruct game instances
 #def from_dict(game)
-#def deserialize_dict(bits)
 
 class InvalidAction(Exception):
     pass # tried to do something not allowed
