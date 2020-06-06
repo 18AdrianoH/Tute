@@ -167,7 +167,7 @@ class Tute:
 
             print('Restarting Game')
         else:
-            raise InvalidState("Unknown conditions, not in WAITING, ROUNDS, or TERMINAL states")
+            raise InvalidState('Unknown conditions, not in WAITING, ROUNDS, or TERMINAL states')
     
     ########## Game action transitions taken by players #########
     def restart_game(self):
@@ -202,8 +202,29 @@ class Tute:
     
     # Plays a card that player_id (player) has
     def play_card(self, player_id, card):
-        assert self.state in self.play_states # make sure we are in a round
-        assert self.players[self.player_index] == player_id # make sure the right player is going (i.e. their turn)
+        if card in self.player_cards[player_id] and player_id in self.player_order:
+            if self.player_order[self.turn] == player_id:
+                if self.center[self.turn] != None:
+                    raise InvalidState('Somehow this turn already happened')
+                else:
+                    self.center[self.turn] = card
+
+                    self.player_cards.remove(card)
+                    self.player_cards_state.remove(card)
+
+                    if self.round_suit is None:
+                        self.round_suit = card[-1] # last element is always suit
+
+                    self.turn_finished = True
+                    if self.turn == 3:
+                        self.round_finished = True
+                    
+                    self.increment_state() ## TODO assert there are no bugs here
+            else:
+                raise InvalidAction('It\s not {}\'s turn'.format(player_id))
+        else:
+            raise InvalidAction('Player \'{}\' nonexistent or card {} not held'.format(player_id, card))
+        
         self.player_cards[player].remove(card_str)
 
         # add card to the center
@@ -220,7 +241,7 @@ class Tute:
         if card in self.player_cards[player_id]:
             self.player_cards_state[player_id][card] = not self.player_cards_state[player_id][card]
         else:
-            raise InvalidAction('{} does not have card {}'.format(player_id, card))
+            raise InvalidAction('{} does not have card {} or doesn\'t exist'.format(player_id, card))
     
     # reveal a card that the player with player_id has already won (because graphics differ)
     # this is a toggle method so it will hide if revealed
@@ -228,7 +249,7 @@ class Tute:
         if card in self.player_won_cards[player_id]:
             self.player_won_cards_state[player_id][card] = not self.player_won_cards_state[player_id][card]
         else:
-            raise InvalidAction('{} has not won card {}'.format(player_id, card))
+            raise InvalidAction('{} has not won card {} or doesn\'t exist'.format(player_id, card))
 
 ########## Below are helpful methods used above ##########
 
