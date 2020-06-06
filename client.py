@@ -34,7 +34,7 @@ def main(client_id=0):
             
             # we set it up for testing so that if you set up a space-bar you send a request
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                net.send("request from client with id {}".format(str(client_id)))
+                net.send('request from client with id {}'.format(str(client_id)))
             elif event.type == pygame.KEYDOWN:
                 pass
         
@@ -48,5 +48,5 @@ def main(client_id=0):
 # main
 if __name__ == "__main__":
     window = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("client")
+    pygame.display.set_caption('client')
     main(client_id=0)

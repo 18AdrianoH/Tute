@@ -22,14 +22,34 @@ CARD_VALUE = {'A' : 11,'3' : 10,'R' : 4,'C' : 3,'S' : 2,'9' : 0, '8' : 0, '7' : 
 ########## Serialization code ##########
 
 # return a dict representation of a tute game
+# only serializes what will be necessary for users
+# does not copy but instead uses aliasing (because json dumps doesn't have effects)
 def to_dict(game):
     game_dict = {}
+    # player whose turn it is (the one to play now)
+    game_dict['state'] = game.state
+    game_dict['game suit'] = game.game_suit
+
+    game_dict['to play'] = game.get_turn_player()
+    game_dict['player order'] = game.player_order
+    game_dict['center'] = game.center # be careful with None -> 'null' but decode should be ok
+
+    game_dict['players cards'] = game.player_cards
+    game_dict['won cards'] = game.player_won_cards
+
+    game_dict['revealed cards'] = game.player_cards_state
+    game_dict['revealed won cards'] = game.player_won_cards_state
+
     return game_dict
 # serialize a game dict into bits to be sent
 def serialize_dict(game_dict):
     return json.dumps(game_dict)
 def deserialize_dict(bits):
     return json.loads(bits)
+
+# general serializing for games
+def serialize(game):
+    return serialize_dict(to_dict(game))
 
 # potentially useful to reconstruct game instances
 #def from_dict(game)

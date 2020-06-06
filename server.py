@@ -12,7 +12,7 @@ import random
 
 from tute import Tute # TODO
 
-DEFAULT_IP = "10.0.0.211" # empty string will become whichever ip is available
+DEFAULT_IP = '10.0.0.211' # empty string will become whichever ip is available
 DEFAULT_PORT = 5555
 MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 
@@ -28,17 +28,17 @@ class Server:
 
     def get_ip(self):
         # used ipconfig getifaddr en0 ... might want to automate
-        print("Please enter your IP Address or click enter for the default.")
+        print('Please enter your IP Address or click enter for the default.')
         ip = input()
-        if ip == "":
+        if ip == '':
             ip = DEFAULT_IP
         return ip
     
     def get_port(self):
         # ports are unsigned 16-bit integers, so the largest port is 65535
-        print("Please enter a valid port or click enter for the default (5555).")
+        print('Please enter a valid port or click enter for the default (5555).')
         port = input()
-        if port == "":
+        if port == '':
             port = DEFAULT_PORT
         return int(port)
 
@@ -55,59 +55,59 @@ class Server:
                 self.server_ip = self.get_ip()
                 self.port = self.get_port()
 
-                # we are using a TCP socket I believe with a "connection oriented protocol"
+                # we are using a TCP socket I believe with a 'connection oriented protocol'
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                print("Socket created, trying to connect...")
+                print('Socket created, trying to connect...')
 
                 for i in range(tries):
-                    print("Try number " + str(i+1))
+                    print('Try number ' + str(i+1))
                     try:
                         self.socket.bind((self.server_ip, self.port))
                         self.socket.listen(MAX_CONNECTIONS) # parameter is how many people you want to let in maximum
-                        print("Started server at {} on port {}".format(self.server_ip, str(self.port)))
-                        print("Waiting for connections...")
+                        print('Started server at {} on port {}'.format(self.server_ip, str(self.port)))
+                        print('Waiting for connections...')
                         not_connected = False
                         break
 
                     except socket.error as socket_error:
-                        print("Failed to start server...")
+                        print('Failed to start server...')
                         print(socket_error)
                         if i == tries - 1:
-                            print("IP/Port aren't available or don't work, try again please")
+                            print('IP/Port aren't available or don't work, try again please')
                         else:
                             delta = 5 * (1 << i)
-                            print("Will try to connect again in " + str(delta) + " seconds")
+                            print('Will try to connect again in ' + str(delta) + ' seconds')
                             time.sleep(delta) # wait five seconds before we try again
 
             except TypeError as type_error:
-                print("You entered the wrong types for IP and port. Port should be an integer")
+                print('You entered the wrong types for IP and port. Port should be an integer')
             except Exception as unknown_error:
-                print("Unknown error, please try again...")
+                print('Unknown error, please try again...')
 
     # helper for start_listening
     def listen(self):
         while self.running:
             try:
                 connection, address = self.socket.accept()
-                print ("connected to {} who is using port {}".format(address[0], str(address[1])))
+                print ('connected to {} who is using port {}'.format(address[0], str(address[1])))
                 player_thread = threading.Thread(target=self.process_response, args=(connection, address))
                 player_thread.start()
             except ConnectionAbortedError as err:
                 # this should only be caused by a race condition where we tried to connect after quitting
                 # but before self.running was False so we still did it
                 # a better solution would involve locks but this should be fine for now
-                assert not self.running, "Some other than the connection race condition may have occured"
+                assert not self.running, 'Some other than the connection race condition may have occured'
         return # threads close when you you return from a function
 
     # will start a loop that will run a loop that allows you to shut down the server
     # and also at the same time waits for requests from clients to arrive
     def start_listening(self):
-        print("Running... type \"quit\" to shut it down")
+        print('Running... type \'quit\' to shut it down')
         self.running = True
         loop_thread = threading.Thread(target=self.listen)
         loop_thread.start()
         # at the same time take input until we get the message to quit
-        while input() != "quit":
+        while input() != 'quit':
             pass
         self.running = False
         self.socket.close()
@@ -133,7 +133,7 @@ class Server:
     # to OTHER players so that they can update their states
     def get_play_order(self):
         for player in self.game.players:
-            reply += " " + player
+            reply += ' ' + player
         return reply
 
     # as a string so we can parse (later use pickle)
@@ -145,64 +145,64 @@ class Server:
     # 2. someone reveals/hides are a card
     # 3. someone cycles
     def get_on_start_on_round_on_play_on_reveal_message(self):
-        return "PLAYING" + self.get_game_state_information() 
+        return 'PLAYING' + self.get_game_state_information() 
 
     def process_client_message(self, message):
-        args = message.split(" ")
+        args = message.split(' ')
         mtype = args[0]
         # they connect upon first connecting to the server
-        if mtype == "CONNECT":
+        if mtype == 'CONNECT':
             self.game.add_player(args[1]) # name of player
-            reply = "CONNECTED {}".format()
+            reply = 'CONNECTED {}'.format()
             return reply
         # they cycle if they press spacebar
-        elif mtype == "CYCLE":
+        elif mtype == 'CYCLE':
             # this will try to start the game
-            if self.game.state == "WAITING" or self.game.state == "TERMINAL":
-                if self.game.state == "TERMINAL":
+            if self.game.state == 'WAITING' or self.game.state == 'TERMINAL':
+                if self.game.state == 'TERMINAL':
                     self.game.reset_game()
                 self.game.start_game()
-                reply = "PLAYING" + self.get_play_order()
+                reply = 'PLAYING' + self.get_play_order()
                 return reply
         # this is if they play a card
-        elif mtype == "PLAY":
+        elif mtype == 'PLAY':
             # will inform people of what cards in the center after playing a card
             self.game.play_card(args[1], args[2]) # name of player, card to play
             # TODO every individual player needs to be notified of this
-            reply = "CENTER"
+            reply = 'CENTER'
             for card in center:
                 if not card is None:
-                    reply += " " + card
+                    reply += ' ' + card
             return reply
         # will reveal if not revealed and hide if revealed
-        elif mtype == "REVEAL":
+        elif mtype == 'REVEAL':
             pass # TODO
 
     def process_response(self, connection, address):
         # initial connection message
-        connection.send("Connected".encode("utf-8"))
+        connection.send('Connected'.encode('utf-8'))
 
         connected = True
         while connected:
             try:
                 data = connection.recv(2048) # number of bits corresponds here to 256 bytes
-                decoded_data = data.decode(encoding="utf-8")
+                decoded_data = data.decode(encoding='utf-8')
 
                 if not data:
-                    print("{} disconnected".format(str(address)))
+                    print('{} disconnected'.format(str(address)))
                     connected = False
                 else:
-                    print("Recieved {}".format(decoded_data))
-                    print("Sending {}".format(reply))
+                    print('Recieved {}'.format(decoded_data))
+                    print('Sending {}'.format(reply))
                     reply = self.process_client_message(decoded_data)
-                    connection.sendall(reply.encode(encoding="utf-8"))
+                    connection.sendall(reply.encode(encoding='utf-8'))
 
             except Exception as exc:
                 print(str(exc))
                 break # TODO figure out what to do here; right now we are just trying to avoid infinite loops
         
         connection.close()
-        print("Closing Thread...")
+        print('Closing Thread...')
         return # this will terminate a thread in python
 
 

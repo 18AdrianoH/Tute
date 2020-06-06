@@ -15,16 +15,16 @@ class Network:
         try:
             self.client.connect((self.server, self.port))
         except Exception as exc:
-            print("Failed to Connect, exception information below.")
+            print('Failed to Connect, exception information below.')
             print(str(exc))
-        return self.client.recv(2048).decode(encoding="utf-8")
+        return self.client.recv(2048).decode(encoding='utf-8')
     
     def quit(self):
         self.client.close()
     
     def send(self, data):
         try:
-            self.client.send(data.encode(encoding="utf-8")) # data is a string lul
+            self.client.send(data.encode(encoding='utf-8')) # data is a string lul
         except socket.error as err:
             print(err)
         return self.client.recv(2048).decode()

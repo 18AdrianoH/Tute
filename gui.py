@@ -83,12 +83,12 @@ class CardSprite:
         self.back = back
 
         if not (self.value is None and self.suit is None):
-            self.front_image = pygame.image.load("./cartas-españolas/"+str(self.suit.value)+"_"+str(self.value)+".jpg")
+            self.front_image = pygame.image.load('./cartas-españolas/'+str(self.suit.value)+'_'+str(self.value)+'.jpg')
             self.front_image = pygame.transform.scale(self.front_image, (self.width, self.height))
         else:
             self.front_image = None
         
-        self.back_image = pygame.image.load("./cartas-españolas/back.jpg")
+        self.back_image = pygame.image.load('./cartas-españolas/back.jpg')
         self.back_image = pygame.transform.scale(self.back_image, (self.width, self.height))
 
         if theta is not None:
@@ -108,7 +108,7 @@ class CardSprite:
         else:
             window.blit(self.back_image, (self.x, self.y)) 
 
-# we will call the suit "card" as a card though its just the suit symbol
+# we will call the suit 'card' as a card though its just the suit symbol
 class PlayerSprites:
     def __init__(self):
         # how many cards each player has
