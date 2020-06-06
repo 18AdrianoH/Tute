@@ -45,6 +45,35 @@ from network import Network
 
 ############################ KEY GRAPHICS FUNCTIONALITY ###################
 
+"""
+Below, here, is a sort of ascii picture of what I envision
+
+    .__.
+    |__|  | | | | | | | | | | | |
+     #                             .__.
+                                 # |__|
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+——     _1_  _2_  _3_  _4_  P        ——
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+——                                  ——
+.__.
+|__|  #                       
+                              #
+                             .__.
+    | | | | | | | | | | | |  |__|
+
+I might text for the pictures to expect at the end of the game but it should be very simple:
+basically just a list in the middle of the screen.
+"""
+
 WIDTH = 1280
 HEIGHT = 720
 COLOR_WHITE = (255, 255, 255)

@@ -2,80 +2,187 @@ import pickle
 import random
 import enum
 
-# valores: as = 11, 3 = 10, rey (12) = 4, caballo (11) = 3, zeta (10) = 2
-# los 40s y los 20s es cuando ganas una ronda y "cantas" un rey y un caballo del mismo palo
-# (40s is mismo palo del de la ronda tambien y 20s es otro palo; pero igual tenes que ganar)
-# tute es quatro reyes o quatro caballos -> ganas el juego completo
+FACES = ("B", "E", "C", "O")
+VALUES = ("A", "R", "C", "S", "9", "8", "7", "6", "5", "4", "3", "2")
 
-# antes de conectarse Tute tiene que mostrar:
-# 1. cuantos jugadores hay
-# 2. quien esta jugando
+# Tute states are
+# WAITING # waiting for players
+# WAITING_P1 # waiting for player 1 to play
+# WAITING_P2 # waiting for player 2 to play
+# WAITING_P3 # waiting for player 3 to play
+# WAITING_P4 # waiting for player 4 to play
+# TERMINAL # game has ended players now count points, can restart game now
+class Tute:
+    def __init__(self, players):
+        ############################ STATE MACHINE #######################
+        self.state = "WAITING" # initially in waiting state
+        self.round_num = 0
+        # play states are always randomized
+        self.play_states = ["WAITING_P1", "WAITING_P2", "WAITING_P3", "WAITING_P4"]
+        random.shuffle(play_states) # decide order of play
+        # if we want to re-initialize just use previous players
+        self.players = [None, None, None, None] if players is None else players
+        self.player_index = 0
+        self.play_state_index = 0
+        ############################
+        self.player_cards = {}
+        self.game_face = random.choice(["E", "C", "O", "B"])
+        self.round_face = None
+        self.center = [None, None, None, None]
+        self.center_index = 0
+        self.player_won_cards = {}
+        self.player_revealed_cards = {}
+    
+    # add a player if a player with that id is not already present
+    def add_player(self, player_id):
+        num_player = 0 # i.e. player 1
+        for player in self.players:
+            if player is not None:
+                if player == player_id: # assume "player" is a string
+                    return False
+                # else
+                num_player += 1
+        
+        assert num_player < 4 # lul
 
-# cada junta de juegos se juegan tres juegos, pero si alguien tiene tute gana todo
+        index = 0 # for player inside the players array
+        insert_index = 0
+        for player in self.play_states:
+            player_num = int(player[-1]) - 1
+            if player_num == num_player:
+                insert_index = index
+                break
+            index += 1
+        
+        self.players(insert_index) = player_id
+        self.player_cards[player_id] = None # later change to their cards
+        self.player_won_cards[player_id] = []
+        self.player_revealed_cards[player_id] = {}
+        return True
+    
+    # return if the first (challenger) is > defender
+    # format is as defined above
+    # game_face is the face we are using in the game
+    # return None if neither wins (we'll let the first player instead in that case)
+    def compare_key_strings(self, challenger, defender):
+        val1, face1 = challenger.split("_")
+        val2, face2 = defender.split("_")
+        if face1 == face2:
+            assert val1 != val2 # whoopsies
+            return card_type_order[face1] > card_type_order[face2]
+        elif face1 == self.game_face and face2 != self.game_face:
+            return True # challenger win
+        elif face2 == self.game_face and face1 != self.game_face:
+            return False # defender win
+        elif face1 == self.round_face and face2 != self.round_face:
+            return True # challenger win
+        elif face2 == self.round_face and face1 != self.round_face:
+            return False # defender win
+        else:
+            # neither is game_face and neither is round_face so we will return none
+            # in practice this will never be returned as you'll see below
+            # in this case the first card down wins
+            return None
 
-# cada juego se:
-# 1. se ponen jugadores a la sar al re-dedor de la mesa (la orden va a ser como un reloj)
-# 2. se elige un palo a la sar (de una carta elijida a la sar)
-# 3. se elije la mano a la sar 
-# despues de reparten 12 cartas a cada uno
-# y luego se juegan rondas hasta el fin del juego
+    # will go from card 0 (first placed) to card n (of length n card_list) (last placed) and return the index
+    # for the card that wins
+    def get_winner(self):
+        assert len(card_list) > 0
+        winner = 0
+        for i in range(1,len(card_list)):
+            if compare_key_strings(card_list[i], card_list[winner]e):
+                winner = i
+        return i
 
-# cada ronda se:
-# 0. la mano es el que gano la mano anterior, si no se elije a la sar
-# 1. la mano pone una carta elijiendo el palo
-# 2. despues calquier carta puesta tiene que ser de ese palo y mas alta que la anterior
-#    si no tenes mas alta que la anterior puede ser mas baja (pero tiene que ser del mismo palo)
-#    si no tenes de ese palo tiene que ser del palo del juego total y ese palo tiene el valor maximo
-#    si no tenes ese tampoco puede ser de cualquier palo y puede ser cualquier carta
-# 3. el ganador se elige con estas reglas:
-#    - de las del palo del juego gana la mas alta
-#    - si no hay de ese palo, del palo de la ronda gana la mas alta
-#        - siempre hay una de ese palo por que corresponde con la carta de la mano
-# el que gana agarra las cuantro cartas y las pone en su pila de cartas usadas
+    def get_cards(self):
+        cards = [face + "_" + value for face in FACES for value in VALUES]
+        random.shuffle(cards)
+        return cards
 
-# cosas importantes que pueda hacer el usuario:
-# 1. leer sus cartas ganadas (pero no las de los otros)
-# 2. tener un contador de cuantas cartas gano
-# 3. tener un contador de cuantas cartas tiene
-# 4. poder ver todas o casi todas sus cartas
-# 5. ver las cartas del centro en el orden en que se pusieron
-# 6. ver quien es la mano de la ronda
+    def split_cards(self, cards):
+        # there are a total of 48 cards
+        return cards[:12], cards[12:24], cards[24:36], cards[36:]
+    
+    # start the game after we are waiting for players
+    # called after we have all four players
+    def start_game(self):
+        assert not players.contains(None) # will have the four names of the four people
+        assert self.state == "WAITING"
+        self.state = self.play_states[0]
+        self.round_num = 1 # start at 1
+        # self.state is now WAITING_PX for some X so taking [-1] is the last element
+        self.player_index = int(self.state[-1]) - 1 # will always index by one so -1
+        self.play_state_index = 0
+        
+        cards_tuple = self.split_cards(self.get_cards)
+        i = 0
+        for player in player_cards:
+            player_cards[player] = cards_tuple[i]
+            for card in player_cards:
+                player_revealed_cards[player][card] = False
+            i += 1
+    
+    # this should only be called when 
+    def increment_state(self):
+        # if we are still in the same round
+        if self.play_state_index < 3:
+            self.play_state_index += 1
+            self.player_index = int(self.state[-1]) - 1
+        # if we are going to a new round
+        elif self.round_num < 12: # 12 rounds at the last round it will be over
+            # determine winner and give cards to players
+            winner_index = self.get_winner() # remember that self.playes is in this wrder
+            winner_id = self.players[winnder_index] # this might be used later
+            print("{} won".format(winner_id))
 
-# Important notes for graphics:
-# 1. each player sees themselves at the bottom
-# the rest of the array from their index to the end and then around from the start to the one before them
-# is filled in from left to top to right (i.e. clockwise)
-# 2. whoever is playing will have their name in red, whereas everyone else will have their name in black
+            # give the center cards to winner_id
+            for card in center:
+                assert not card is None #lul
+                self.player_won_cards[winner_id].append(card)
 
-"""
-Below, here, is a sort of ascii picture of what I envision
+            # everything before winner id now goes to the back cyclically for players
+            # and for waiting array (playstates)
+            # now order is based on the winner
+            self.players = self.players[:winner_index] + self.players[winner_index:]
+            self.play_states = self.play_states[:winner_index] + self.play_state_index[winner_index:]
 
-    .__.
-    |__|  | | | | | | | | | | | |
-     #                             .__.
-                                 # |__|
-——                                  ——
-——                                  ——
-——                                  ——
-——                                  ——
-——     _1_  _2_  _3_  _4_  P        ——
-——                                  ——
-——                                  ——
-——                                  ——
-——                                  ——
-——                                  ——
-——                                  ——
-——                                  ——
-.__.
-|__|  #                       
-                              #
-                             .__.
-    | | | | | | | | | | | |  |__|
+            # set up next round
+            self.round_num += 1
+            self.play_state_index = 0
+            self.state = self.play_states[0]
+            self.center_index = 0
+            self.center = [None, None, None, None]
+            self.round_face = None
+        else:
+            # this is basically all that needs to be done, now players 
+            self.state = "TERMINAL" # we will be in the terminal state
+    
+    # for the next game
+    def reset_game(self):
+        self.__init__(self.players) # list of names
+    
+    # should only be able to play card_str that is there -> in client
+    def play_card(self, player_id, card_str):
+        assert self.state in self.play_states # make sure we are in a round
+        assert self.players[self.player_index] == player_id # make sure the right player is going (i.e. their turn)
+        self.player_cards[player].remove(card_str)
 
-I might text for the pictures to expect at the end of the game but it should be very simple:
-basically just a list in the middle of the screen.
-"""
+        # add card to the center
+        self.center[self.center_index] = card_str
+        self.center_index += 1
 
+        # if it's the first card played it determines the face for the round
+        if self.round_face = None:
+            self.round_face = card_str[2] # 3rd thing is the face
+
+#################### deprecated code below ##################
+
+# the size is very small so an array should be fine
+# def generate_deck():
+#     array = [Card(val, suit) for val in range(1,13) for suit in SUITS]
+#     random.shuffle(array)
+#     return array
+    
 class Suits(enum.Enum):
     bastos = 0
     copas = 1
@@ -89,51 +196,6 @@ class TuteState(enum.Enum):
     end_scores = 3 # show who won and maybe some stats
     end_winner = 7 # show the winner
     # after end_winner go to waiting_for game
-
-class GameState(enum.Enum):
-    init_placing = 0 # pick a random order of players
-    init_suit = 1 # pick a random suit
-    init_shuffle = 2 # shuffle cards and give 12 out to each player
-    init_hand = 3 # pick starting player
-    setting_up_round = 4 # wait for round to start (round is started by previous winner, or if first round by hand)
-    round = 5 # playing round
-    end_scores = 6 # game is over and display scores (maybe some stats too)
-    end_winner = 7 # display winner and update data structures
-
-# where cards are since there are only a set number of such places
-class CardPosition(enum.Enum):
-    pass
-
-# the size is very small so an array should be fine
-def generate_deck():
-    array = [Card(val, suit) for val in range(1,13) for suit in SUITS]
-    random.shuffle(array)
-    return array
-
-class Tute:
-    def __init__(self):
-        self.players = []
-        self.num_games = 3
-    
-    # add a player if a player with that id is not already present
-    def add_player(self, player_id):
-        for player in self.players:
-            if player.id == player_id:
-                return False
-        # else
-        player = Player(player_id)
-        self.players.append(player)
-        return True
-    
-    
-
-# there are three games in Tute
-class Game:
-    def __init__(self):
-        pass
-    def give_out_hands(self):
-        pass
-    pass
     
 class Player:
     def __init__(self, id):
