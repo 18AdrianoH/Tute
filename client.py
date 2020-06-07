@@ -6,47 +6,30 @@
 # it will have basic timers to make sure people don't take too long
 # and it will have a simple installer to install python and the necessary dependencies on mac, windows, or linux
 
-# from tute import *
-from gui import CardSprite, PlayerSprites
-from network import Network
+from tute import deserialize
+from gui import GUI
+from network import Channel
 
-############################ KEY GRAPHICS FUNCTIONALITY ###################
-# TODO move this to tute and then part is used by client part is used by server
-def draw(window, color):
-    window.fill(color)
-    pygame.display.update()
+def main():
+    # onboard the network parameters
+    print('Please enter your IP Address.')
+    ip = input()
+    print('Please enter 5555.')
+    port = input()
 
-###################### KEY GAMEPLAY FUNCTIONALITY ######################
-
-def main(client_id=0):
-    player_sp = PlayerSprites()
-    net = Network()
+    net = Channel(server_ip, server_port)
+    gui = Interface()
 
     running = True
     while running:
-        for event in pygame.event.get():
-            # user can quit just by closing the window
-            if event.type == pygame.QUIT:
-                running = False
-                pygame.display.quit()
-                net.quit()
-                pygame.quit()
-            
-            # we set it up for testing so that if you set up a space-bar you send a request
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                net.send('request from client with id {}'.format(str(client_id)))
-            elif event.type == pygame.KEYDOWN:
-                pass
-        
-        # draw the empty board
-        draw(window, COLOR_WHITE)
-        # draw all the cards that I own plus other helpful ones
-        player_sp.display(window)
-        # update
-        pygame.display.update()
+        # see what the game state is and update our look
+        game_state = net.message()
+        gui.update(game_state)
 
-# main
+        # now get user actions
+        gui.execute() # execute events and store messages in internal structures
+        messages = gui.messages() # query message structures to see what requests users have made
+        network.send(messages)
+
 if __name__ == "__main__":
-    window = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption('client')
-    main(client_id=0)
+    main()

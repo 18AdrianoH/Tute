@@ -1,19 +1,21 @@
 # server houses the main gaming logic and keeps track of who's playing
 
 # messages to server are 
+
 # CONNECT <username>
 # PLAY <card>
-# CYCLE
+# REVEAL <card>
+# REVEAL_WON <card>
+# CONTINUE
 
-import socket
-import threading
-import time
-import random
+import socket # for talking with clients
+import threading # for dealing with multiple requests
+import time # for time.sleep and more
+import random # for random games
+import os # for cryptographically secure random numbers of our messages
 
 from tute import Tute # TODO
 
-DEFAULT_IP = '10.0.0.211' # empty string will become whichever ip is available
-DEFAULT_PORT = 5555
 MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 
 # server is the executor of our game
@@ -27,19 +29,15 @@ class Server:
         self.game = Tute()
 
     def get_ip(self):
-        # used ipconfig getifaddr en0 ... might want to automate
-        print('Please enter your IP Address or click enter for the default.')
+        # used ipconfig getifaddr en0
+        print('Please enter your IP Address.')
         ip = input()
-        if ip == '':
-            ip = DEFAULT_IP
         return ip
     
     def get_port(self):
         # ports are unsigned 16-bit integers, so the largest port is 65535
-        print('Please enter a valid port or click enter for the default (5555).')
+        print('Please enter 5555.')
         port = input()
-        if port == '':
-            port = DEFAULT_PORT
         return int(port)
 
     # launches the networking for the server

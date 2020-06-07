@@ -152,3 +152,47 @@ class PlayerSprites:
             card.display(window)
         for card in self.aux:
             card.display(window)
+
+# will display a pygame game and return messages based on in user input
+# it takes in game state and uses that to display and returns messages
+class Interface:
+    def __init__(self, player_id):
+        self.player = player_id
+        self.messages = []
+
+        self.window = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption('client')
+
+    def update(self, game_json):
+        pass
+
+    def execute(self):
+        for event in pygame.event.get():
+            # user can quit just by closing the window
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.display.quit()
+                net.quit()
+                pygame.quit()
+            
+            # we set it up for testing so that if you set up a space-bar you send a request
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                net.send('request from client with id {}'.format(str(client_id)))
+            elif event.type == pygame.KEYDOWN:
+                pass
+    def messages(self):
+        return self.messages
+    
+    def draw(self, color):
+        self.window.fill(color)
+        pygame.display.update()
+
+############################ KEY GRAPHICS FUNCTIONALITY ###################
+    
+
+# draw the empty board
+#draw(window, COLOR_WHITE)
+# draw all the cards that I own plus other helpful ones
+#player_sp.display(window)
+# update
+#pygame.display.update()

@@ -44,9 +44,9 @@ def to_dict(game):
 # serialize a game dict into bits to be sent
 def serialize_dict(game_dict):
     return json.dumps(game_dict)
-def deserialize_dict(bits):
+# deserializes to a dict
+def deserialize(bits):
     return json.loads(bits)
-
 # general serializing for games
 def serialize(game):
     return serialize_dict(to_dict(game))
