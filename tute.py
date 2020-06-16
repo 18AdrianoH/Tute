@@ -3,7 +3,7 @@ import json
 
 ########## Constants #########
 
-FACES = ('B', 'E', 'C', 'O')
+SUITS = ('B', 'E', 'C', 'O')
 VALUES = ('A', 'R', 'C', 'S', '9', '8', '7', '6', '5', '4', '3', '2')
 
 CARD_ORDER = {'A' : 11,'3' : 10,'R' : 9,'C' : 8,'S' : 7,'9' : 6, '8' : 5, '7' : 4, '6' : 3, '5' : 2, '4' : 1, '3' : 0}
@@ -95,7 +95,7 @@ class Tute:
     # Called after we have all four players
     def init_game(self):
         # initialize random conditions
-        self.game_suite = random.choice(['E', 'C', 'O', 'B'])
+        self.game_suit = random.choice(['E', 'C', 'O', 'B'])
         # self.round_suit remains None until someone places a card
         random.shuffle(self.player_order)
         
@@ -252,9 +252,9 @@ class Tute:
         self.center[self.center_index] = card_str
         self.center_index += 1
 
-        # if it's the first card played it determines the face for the round
-        if self.round_face = None:
-            self.round_face = card_str[2] # 3rd thing is the face
+        # if it's the first card played it determines the suit for the round
+        if self.round_suit = None:
+            self.round_suit = card_str[2] # 3rd thing is the suit
     
     # Reveal a card the player with player_id has (precondition that he/she has it)
     # this is a toggle method so it will hide if revealed
@@ -303,7 +303,7 @@ def get_winning_card(cards_list, rs, gs):
 
 # Card generation code
 def get_cards():
-    cards = [face + '_' + value for face in FACES for value in VALUES]
+    cards = [suit + '_' + value for suit in SUITS for value in VALUES]
     random.shuffle(cards)
     return cards
 # Card splitting will be helpful you'll see

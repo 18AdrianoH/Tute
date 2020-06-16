@@ -6,6 +6,10 @@ import pygame
 import random # TODO remove, this is done by the server
 
 # TODO we have to display their look somewhere
+
+# we will use hitboxes and mouse clicks
+# a left mouse click plays the card
+# a right mouse click reveals the card
 """
     .__.
     |__|  | | | | | | | | | | | |
@@ -29,47 +33,18 @@ import random # TODO remove, this is done by the server
                              .__.
     | | | | | | | | | | | |  |__|
 """
-# more efficient way to generate exists lol
-use_keycodes = {
-    '1':0,
-    '2':1,
-    '3':2,
-    '4':3,
-    '5':4,
-    '6':5,
-    '7':6,
-    '8':7,
-    '9':8,
-    '10':9,
-    '11':10,
-    '12':11,
-}
-reveal_keycodes = {
-    'q':0,
-    'w':1,
-    'e':2,
-    'r':3,
-    't':4,
-    'y':5,
-    'u':6,
-    'i':7,
-    'o':8,
-    'p':9,
-    '[':10,
-    ']':11,
-}
 
-WIDTH = 1280
-HEIGHT = 720
+# constants pertaining to our files and stuff
 COLOR_WHITE = (255, 255, 255)
+CARD_WIDTH_TO_HEIGHT_RATIO = 201/279 # this is width/height
 
-CARD_WIDTH = int(201/1.5)
-CARD_HEIGHT = int(279/1.5)
+#################### Sprite Types and Graphics Helpers ####################
 
+# TODO fix to 
 class CardSprite:
     # suits that are possible in Tute are: bastos, copas, espadas, oros
     # for more generality add width and hegiht options
-    def __init__(self, value, suit, width=CARD_WIDTH, height=CARD_HEIGHT, theta=None, back=False, x=None, y=None):
+    def __init__(self, value, suit, width, height, theta=None, back=False, x=None, y=None):
         self.value = value
         assert value is None or type(value) == int # for aux none
         self.suit = suit
@@ -83,7 +58,7 @@ class CardSprite:
         self.back = back
 
         if not (self.value is None and self.suit is None):
-            self.front_image = pygame.image.load('./cartas-españolas/'+str(self.suit.value)+'_'+str(self.value)+'.jpg')
+            self.front_image = pygame.image.load('./cartas-españolas/'+self.suit+'_'+str(self.value)+'.jpg')
             self.front_image = pygame.transform.scale(self.front_image, (self.width, self.height))
         else:
             self.front_image = None
@@ -153,6 +128,8 @@ class PlayerSprites:
         for card in self.aux:
             card.display(window)
 
+#################### Orchestration for Graphics Below ####################
+
 # will display a pygame game and return messages based on in user input
 # it takes in game state and uses that to display and returns messages
 class Interface:
@@ -160,39 +137,89 @@ class Interface:
         self.player = player_id
         self.messages = []
 
-        self.window = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        self.WIDTH, self.HEIGHT = pygame.display.get_surface().get_size()
+
+
         pygame.display.set_caption('client')
 
-    def update(self, game_json):
-        pass
+        self.action_state = 'WAITING'
 
-    def execute(self):
-        for event in pygame.event.get():
-            # user can quit just by closing the window
-            if event.type == pygame.QUIT:
-                running = False
-                pygame.display.quit()
-                net.quit()
-                pygame.quit()
-            
-            # we set it up for testing so that if you set up a space-bar you send a request
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                net.send('request from client with id {}'.format(str(client_id)))
-            elif event.type == pygame.KEYDOWN:
-                pass
-    def messages(self):
-        return self.messages
+        # realistically you'd want something like a quad-tree or search trees
+        self.hitboxes = {}
+
+    ########## Key Graphics Functionality ##########
+    def update(self, game_json):
+        pass            
     
     def draw(self, color):
         self.window.fill(color)
         pygame.display.update()
-
-############################ KEY GRAPHICS FUNCTIONALITY ###################
     
+    ########## Key Action Functionality Below ##########
 
-# draw the empty board
-#draw(window, COLOR_WHITE)
-# draw all the cards that I own plus other helpful ones
-#player_sp.display(window)
-# update
-#pygame.display.update()
+    # QUIT
+    # 'PLAY-SELECT'
+    # 'REVEAL-SELECT'
+    # 'PLAY'
+    # 'REVEAL'
+    # 'CYCLE'
+    # 'WAITING'
+
+    # return one of above in that order (i.e. if you play and reveal then you are playing)
+    # this will return the next state to go to in actions
+    # and any important data in a tuple (state, data)
+    # will return None if there is no action need be taken
+    def get_action(events):
+        for event in events:
+            if event.type == pygame.QUIT or event.type == pygame.KEYUP and event.key = K_q:
+                return ('QUIT', )
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # left mid right scrollup scrolldown
+                left, _, right, _, _ = pygame.mouse.get_pressed()
+                if self.action_state == 'WAITING':
+                    pos = pygame.mouse.get_pos()
+                    if left and right:
+                        # can't do both
+                        return None
+                    elif left:
+                        return ('PLAY-SELECT', pos)
+                    elif right:
+                        return ('REVEAL-SELECT', pos)
+                else:
+                    # clicked too fast somewhere so was in another state
+                    return None
+            elif event.type == pygame.MOUSEBUTTONUP:
+                pos = pygame.mouse.get_pos()
+                if self.action_state == 'PLAY-SELECT':
+                    # pos technically not necessary since we got that before
+                    return ('PLAY', pos)
+                elif self.action_state == 'REVEAL-SELECT':
+                    return ('REVEAL', pos)
+                else:
+                    # no change of state
+                    return None
+            # since we only have one spacebar it's fine to just do keyup
+            elif event.type == pygame.KEYUP and event.key == K_SPACE:
+                if self.action_state == 'WAITING':
+                    return ('CYCLE', )
+                else:
+                    return None
+        return None # no action taken
+
+    def execute_action(self):
+        # this implementation insures that one event happens per execute cycle
+        actions = get_action(pygame.event.get())
+        if action is None:
+            return # do nothing
+        # else
+        state, data = actions
+
+        if state == 'QUIT':
+            running = False
+            pygame.display.quit()
+            net.quit()
+            pygame.quit()
+    
+    def messages(self):
+        return self.messages

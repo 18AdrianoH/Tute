@@ -5,7 +5,7 @@
 # CONNECT <username>
 # PLAY <card>
 # REVEAL <card>
-# REVEAL_WON <card>
+# REVEAL-WON <card>
 # CONTINUE
 
 import socket # for talking with clients
