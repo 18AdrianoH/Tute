@@ -3,10 +3,9 @@
 # messages to server are 
 
 # CONNECT <username>
-# PLAY <card>
-# REVEAL <card>
-# REVEAL-WON <card>
-# CONTINUE
+# PLAY <card> <player id>
+# REVEAL <card> <player id> # reveal-won is the same as reveal, we will just check both
+# CYCLE
 
 import socket # for talking with clients
 import threading # for dealing with multiple requests

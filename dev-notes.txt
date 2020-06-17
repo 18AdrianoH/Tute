@@ -117,3 +117,10 @@ on mac, and this is going to be used by people who might not be very technologic
 
 Notes to self: don't hardcode in Droplet IP ever because it will show in logs once you make this project public. The internal IP
 of my laptop inside my house is fine though (obviously because NAT).
+
+"""
+As of June 16th 2020
+
+I am going to use the ending location of a click to determine what to do. This means that in the ButtonUp REVEAL/PLAY
+part we are going to execute. This means if you click and drag you can "cancel" mistakes which is good.
+"""

@@ -33,3 +33,7 @@ class Channel:
             except socket.error as err:
                 print(err)
             return self.client.recv(2048).decode()
+
+# the master manages the game using Tute datastructures
+class Master:
+    pass

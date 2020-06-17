@@ -36,70 +36,71 @@ import random # TODO remove, this is done by the server
 
 # constants pertaining to our files and stuff
 COLOR_WHITE = (255, 255, 255)
-CARD_WIDTH_TO_HEIGHT_RATIO = 201/279 # this is width/height
+CARD_WIDTH_TO_HEIGHT_RATIO = 201.0/279.0 # this is width/height
 
 #################### Sprite Types and Graphics Helpers ####################
-
-# TODO fix to 
-class CardSprite:
+# A dummy card sprite can have None as its 'card' or we can just put a placeholder
+# This card is also used for hitbox detection
+class Card:
     # suits that are possible in Tute are: bastos, copas, espadas, oros
     # for more generality add width and hegiht options
-    def __init__(self, value, suit, width, height, theta=None, back=False, x=None, y=None):
-        self.value = value
-        assert value is None or type(value) == int # for aux none
-        self.suit = suit
-        assert suit is None or type(suit) == Suits # for aux none
+    def __init__(self, card, width, height, rotation, back, x, y):
+        # type of card
+        self.value = value, self.suit = card.split('_')
+        self.card = card
 
-        # positional and type information
+        # positional information
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.back = back
 
-        if not (self.value is None and self.suit is None):
-            self.front_image = pygame.image.load('./cartas-españolas/'+self.suit+'_'+str(self.value)+'.jpg')
+        # show style information
+        self.back = back
+        self.rotation = rotation if rotation is not None else 0 # angle counterclockwise as usual
+        self.front_image = None
+        self.back_image = None
+
+        # load image information
+        if not self.back:
+            self.front_image = pygame.image.load('./cartas-españolas/'+self.value+'_'+self.suit+'.jpg')
             self.front_image = pygame.transform.scale(self.front_image, (self.width, self.height))
         else:
-            self.front_image = None
-        
-        self.back_image = pygame.image.load('./cartas-españolas/back.jpg')
-        self.back_image = pygame.transform.scale(self.back_image, (self.width, self.height))
+            self.back_image = pygame.image.load('./cartas-españolas/back.jpg')
+            self.back_image = pygame.transform.scale(self.back_image, (self.width, self.height))
 
-        if theta is not None:
-            if not (self.value is None and self.suit is None):
+        if rotation > 0:
+            if not self.back:
                 self.front_image = pygame.transform.rotate(self.front_image, theta)
-            self.back_image = pygame.transform.rotate(self.back_image, theta)
+            else:
+                self.back_image = pygame.transform.rotate(self.back_image, theta)
     
-    def is_ace(self):
-        return self.value == 1
-
-    def __eq__(self, other):
-        return type(self) == type(other) and self.value == other.value and self.suit == other.suit
-    
-    def display(self, window): # if None and None then will bitch about needing initialization
+    # display information
+    def display(self, window):
         if not self.back:
             window.blit(self.front_image, (self.x, self.y)) 
         else:
-            window.blit(self.back_image, (self.x, self.y)) 
+            window.blit(self.back_image, (self.x, self.y))
+    
+    # for this just remember that the coordinate system increments as you go down, not up
+    def contains_point(self, x, y):
+        left = self.x
+        top = self.y
+        bot = self.y + self.height
+        right = self.x + self.width
 
-# we will call the suit 'card' as a card though its just the suit symbol
+        return left <= x and x <= right and top <= y and y <= bot
+
+# player_sprites encapsulates all the sprites that a single player has
 class PlayerSprites:
-    def __init__(self):
-        # how many cards each player has
-        self.hand_size = 12
-        # their card backs
-        self.aux = [
-            CardSprite(None, None, theta=90, back=True), # right
-            CardSprite(None, None, theta=180, back=True), # top
-            CardSprite(None, None, theta=270, back=True), # left
-            ]
-        # where their card backs will be
-        self.aux_locs = [
-            (WIDTH//2 - CARD_WIDTH//2, 0), 
-            (0, HEIGHT//2 - CARD_WIDTH//2), 
-            (WIDTH - CARD_HEIGHT, HEIGHT//2 - CARD_WIDTH//2),
-        ]
+    def __init__(self, cards, won_cards, screen_width, screen_height, main_player, rot):
+        self.cards = self.init_card_sprites(cards)
+        self.won_cards = won_cards
+
+        self.screen_height = screen_height
+        self.screen_width = screen_width
+        # determine screen height and width here
+        
         # where the cards will be positioned for me
         self.starting_x = 0
         self.starting_y = HEIGHT - CARD_HEIGHT
@@ -123,19 +124,38 @@ class PlayerSprites:
             self.aux[i].x , self.aux[i].y = self.aux_locs[i]
 
     def display(self, window):
-        for card in self.my_cards:
+        for card in self.cards:
             card.display(window)
-        for card in self.aux:
+        for card in self.won_cards:
             card.display(window)
 
+# this encapsulates all of the players' cards
+# 
+class Sprites:
+    pass
 #################### Orchestration for Graphics Below ####################
+
+"""
+# their card backs
+        self.aux = [
+            CardSprite(None, None, theta=90, back=True), # right
+            CardSprite(None, None, theta=180, back=True), # top
+            CardSprite(None, None, theta=270, back=True), # left
+            ]
+        # where their card backs will be
+        self.aux_locs = [
+            (WIDTH//2 - CARD_WIDTH//2, 0), 
+            (0, HEIGHT//2 - CARD_WIDTH//2), 
+            (WIDTH - CARD_HEIGHT, HEIGHT//2 - CARD_WIDTH//2),
+        ]
+"""
 
 # will display a pygame game and return messages based on in user input
 # it takes in game state and uses that to display and returns messages
 class Interface:
     def __init__(self, player_id):
         self.player = player_id
-        self.messages = []
+        self.requests = []
 
         self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         self.WIDTH, self.HEIGHT = pygame.display.get_surface().get_size()
@@ -210,7 +230,8 @@ class Interface:
     def execute_action(self):
         # this implementation insures that one event happens per execute cycle
         actions = get_action(pygame.event.get())
-        if action is None:
+
+        if actions is None:
             return # do nothing
         # else
         state, data = actions
@@ -220,6 +241,29 @@ class Interface:
             pygame.display.quit()
             net.quit()
             pygame.quit()
+        elif state == 'PLAY':
+            self.execute_play()
+        elif state == 'REVEAL':
+            self.execute_reveal()
+        elif state == 'CYCLE':
+            self.execute_cycle()
+
+        # if we are going to a select state then we do nothing since those are just there to insure
+        # that we dont do multiple actions faster than we can see by mouse down repeatedly
+    
+    # these are the functions that figure out 
+
+    def execute_reveal(self):
+        pass
+
+    def execute_play(self):
+        play_string = ''
+        card = ''
+        requests.append(play_string)
+
+    # lol this is a simple one 
+    def execute_cycle(self):
+        requests.append('CYCLE')
     
     def messages(self):
         return self.messages
