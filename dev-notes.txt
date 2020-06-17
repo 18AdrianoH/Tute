@@ -124,3 +124,5 @@ As of June 16th 2020
 I am going to use the ending location of a click to determine what to do. This means that in the ButtonUp REVEAL/PLAY
 part we are going to execute. This means if you click and drag you can "cancel" mistakes which is good.
 """
+
+Yea this is badly documented I get it. The comments are literally from before I changed the design in my head.
