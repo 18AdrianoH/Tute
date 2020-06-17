@@ -126,3 +126,53 @@ part we are going to execute. This means if you click and drag you can "cancel" 
 """
 
 Yea this is badly documented I get it. The comments are literally from before I changed the design in my head.
+
+Code I wrote by accident:
+
+# note you never add to your cards or remove from your won cards
+    def add_card_to_won(self, card):
+        next_x, next_y = None, None
+        offset = int(self.card_width / CARD_DENSITY)
+        start_x, start_y = self.start_position
+
+        if self.type == 'PLAYER':
+            start_y -= self.real_height # your won cards display above your play cards
+            next_x = len(self.won_card_sprites) * offset + start_x
+            next_y = start_y
+        elif self.type == 'RIGHT':
+            start_x -= self.real_width # for them its on the left
+            next_x = start_x
+            next_y = len(self.won_card_sprites) * offset * -1 + start_y
+        elif self.type == 'TOP':
+            # we'll display for 'them' not for 'you'
+            start_y += self.real_height # for them its on the bottom
+            next_x = len(self.won_card_sprites) * offset * -1 + start_x # remember we start on the right
+            next_y = start_y
+        elif self.type == 'LEFT':
+            start_x += self.real_width # for them its on the right (duh)
+            next_x = start_x 
+            next_y = len(self.won_card_sprites) * offset + start_y
+        
+        self.won_cards.append(card)
+        self.won_card_sprites.append(
+            CardSprite(card, self.real_width, self.real_height, self.rotation, next_x, next_y, self.back)
+            )
+
+    def remove_card_from_hand(self, card):
+        self.cards.remove(card)
+        i = 0
+        while self.cards[i] != card:
+            i+=1
+        old = self.card_sprites.pop(i) # now i will be on the next card
+        # now we need to shift all these to the left (or opposite direction lol)
+        while i < len(self.card_sprites):
+            # this should work no matter what type
+            self.card_sprites[i].move(old.loc())
+            old = self.card_sprites[i]
+
+    # you'll be able to reveal on either and it does so by checking equality (will also hide if revealed)
+    def toggle_reveal_card(self, card):
+        for card_sprite in self.card_sprites:
+            if card_sprite.card == card:
+                card_sprite.back = not card_sprite.back
+                return

@@ -25,11 +25,19 @@ def main():
         # see what the game state is and update our look
         game_state = net.message()
         gui.update(game_state)
+        gui.draw()
 
         # now get user actions
         gui.execute() # execute events and store messages in internal structures
-        messages = gui.messages() # query message structures to see what requests users have made
-        network.send(messages)
+        requests = gui.requests() # query message structures to see what requests users have made
+        for request in requests:
+            # if you quit you'd like to perhaps be able to reconnect...
+            # also we'll let people manually quit
+            if request == 'QUIT':
+                running = False
+                pygame.quit() # not sure if your pygame stuff is gonna work properly
+            else:
+                net.send(request)
 
 if __name__ == "__main__":
     main()

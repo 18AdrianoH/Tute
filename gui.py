@@ -104,7 +104,9 @@ class CardSprite:
 # player = 0, 0, right = 0, 90, top = 0, 180, left = 0, 270
 
 class PlayerSprites:
-    def __init__(self, cards screen_width, screen_height, type):
+    def __init__(self, cards screen_width, screen_height, type, player_id):
+        self.player_id = player_id
+
         self.type = type
         self.screen_height = screen_height
         self.screen_width = screen_width
@@ -119,17 +121,14 @@ class PlayerSprites:
 
         self.start_position = None # kinda necessary for subsequent additions
 
-        # lul
-        self.back = True if not self.type == 'PLAYER' else False
-
         # initialize the cards
         self.rotation = self.init_rotation()
 
-        # TODO maybe delete this if they are not used
         self.cards = cards
         self.won_cards = [] # lul
         
-        self.card_sprites = self.init_card_sprites(cards)
+        self.card_sprites = None
+        self.init_card_sprites(cards) # now they are not None
         self.won_card_sprites = [] # lol it starts empty
 
     # initialization helper functionality
@@ -153,8 +152,6 @@ class PlayerSprites:
             self.height, self.width
 
     def init_card_sprites(self, cards):
-        card_sprites = []
-
         # decide on the width/height of cards
         self.init_card_dims()
 
@@ -166,15 +163,26 @@ class PlayerSprites:
             (self.screen_width - self.card_width, 0) if self.type == 'TOP' else \
             (0,0) if self.type == 'LEFT'
         
+        self.update_cards(cards)
+    
+    # TODO for both add reveals
+
+    # it will regenerate the whole graphics shit
+    def update_cards(self, cards, revealed_cards):
+        self.cards = cards
+        self.card_sprites = []
+
         # temporary helper variables
-        startx, starty = start_position
+        startx, starty = self.start_position
 
         offset = int(self.card_width / CARD_DENSITY)
 
         # len(cards) = 12 at the start
         for i in range(0, len(cards), 1):
             x_pos, y_pos = None, None
-            card = self.cards[i]
+            card = cards[i]
+
+            back = card in revealed_cards
 
             if self.type == 'PLAYER':
                 x_pos = i * offset+ startx # go right so positive
@@ -189,59 +197,54 @@ class PlayerSprites:
                 x_pos = startx
                 y_pos = i * offset + starty # go down so positive
             
-            card_sprites.append(
-                CardSprite(card, self.real_width, self.real_height, self.rotation, x_pos, y_pos, self.back)
+            self.card_sprites.append(
+                CardSprite(card, self.real_width, self.real_height, self.rotation, x_pos, y_pos, back)
                 )
+    # this is very similar to above, it's just shifted up
+    def update_won_cards(self, won_cards, revealed_cards):
+        self.won_cards = won_cards
+        self.won_card_sprites = []
 
-        return card_sprites
-
-    # you'll be able to reveal on either and it does so by checking equality (will also hide if revealed)
-    def toggle_reveal_card(self, card):
-        for card_sprite in self.card_sprites:
-            if card_sprite.card == card:
-                card_sprite.back = not card_sprite.back
-                return
-
-    # note you never add to your cards or remove from your won cards
-    def add_card_to_won(self, card):
-        next_x, next_y = None, None
-        offset = int(self.card_width / CARD_DENSITY)
         start_x, start_y = self.start_position
-
         if self.type == 'PLAYER':
             start_y -= self.real_height # your won cards display above your play cards
-            next_x = len(self.won_card_sprites) * offset + start_x
-            next_y = start_y
         elif self.type == 'RIGHT':
             start_x -= self.real_width # for them its on the left
-            next_x = start_x
-            next_y = len(self.won_card_sprites) * offset * -1 + start_y
         elif self.type == 'TOP':
             # we'll display for 'them' not for 'you'
             start_y += self.real_height # for them its on the bottom
-            next_x = len(self.won_card_sprites) * offset * -1 + start_x # remember we start on the right
-            next_y = start_y
         elif self.type == 'LEFT':
             start_x += self.real_width # for them its on the right (duh)
-            next_x = start_x 
-            next_y = len(self.won_card_sprites) * offset + start_y
-        
-        self.won_cards.append(card)
-        self.won_card_sprites.append(
-            CardSprite(card, self.real_width, self.real_height, self.rotation, next_x, next_y, self.back)
+
+        offset = int(self.card_width / CARD_DENSITY)
+
+        for i in range(0, len(won_cards), 1):
+            x_pos, y_pos = None, None
+            card = won_cards[i]
+
+            back = card in revealed_cards
+
+            if self.type == 'PLAYER':
+                next_x = i * offset + start_x
+                next_y = start_y
+            elif self.type == 'RIGHT':
+                next_x = start_x
+                next_y = i * offset * -1 + start_y
+            elif self.type == 'TOP':
+                # we'll display for 'them' not for 'you'
+                next_x = i * offset * -1 + start_x # remember we start on the right
+                next_y = start_y
+            elif self.type == 'LEFT':
+                next_x = start_x 
+                next_y = i * offset + start_y
+            
+            self.won_card_sprites.append(
+                CardSprite(card, self.real_width, self.real_height, self.rotation, x_pos, y_pos, back)
             )
 
-    def remove_card_from_hand(self, card):
-        self.cards.remove(card)
-        i = 0
-        while self.cards[i] != card:
-            i+=1
-        old = self.card_sprites.pop(i) # now i will be on the next card
-        # now we need to shift all these to the left (or opposite direction lol)
-        while i < len(self.card_sprites):
-            # this should work no matter what type
-            self.card_sprites[i].move(old.loc())
-            old = self.card_sprites[i]
+    def update(self, cards, won_cards, revealed_cards, revealed_won_cards):
+        self.update_cards(cards, revealed_cards)
+        self.update_won_cards(won_cards, revealed_won_cards)
 
     # display functionality
     # note how it displays in order
@@ -277,7 +280,8 @@ class Sprites:
                     player_cards[player_order[index]],
                     self.screen_width,
                     self.screen_height,
-                    type[i]
+                    type[i],
+                    player_order[index]
                     )
                 )
             index = (index + 1) % len(player_order)
@@ -290,47 +294,54 @@ class Sprites:
             player_sprites.display(window)
     
     # we only react to cards clicked if they are ours (we don't get to choose what to do with others' cards)
-    def card_clicked(self, x, y):
+    def card_clicked(self, xy):
+        x, y = xy
         for card_sprite in self.bot_player_sprites:
             if card_sprite.contains_point(x, y):
                 return card_sprite.card
         # no card found
         return None
+    
+    def update(self, game_state):
+        for player_sprites in self.player_sprites:
+            self.player_sprites.update(
+                game_state['player cards'][player_sprites.player_id],
+                game_state['won cards'][player_sprites.player_id], 
+                game_state['revealed cards'], game_state['revealed won cards']
+                )
 
 #################### Orchestration for Graphics Below ####################
 
 # will display a pygame game and return messages based on in user input
 # it takes in game state and uses that to display and returns messages
 class Interface:
-    def __init__(self, player_id, game_state):
+    def __init__(self, player_id, game_json):
         # constants pertaining to our files and stuff
 
-        self.player = player_id
-        self.sprites = Sprites(game_state, player_id)
-        self.requests = []
+        self.player = player_id # who this interface is for
+        self.game_state = game_json # what the game looks like right now
+        self.sprites = Sprites(self.game_state, player_id) # sprites to show for this person
+        self.requests = [] # queue of requests for the server (we append, client pops)
 
         self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        self.WIDTH, self.HEIGHT = pygame.display.get_surface().get_size()
-
-
-        pygame.display.set_caption('client')
+        self.screen_width, self.screen_height = pygame.display.get_surface().get_size()
+        pygame.display.set_caption('Tute Game Client Interface')
 
         self.action_state = 'WAITING'
 
-        # realistically you'd want something like a quad-tree or search trees
-        self.hitboxes = {}
-
     ########## Key Graphics Functionality ##########
     def update(self, game_json):
-        pass            
+        self.game_state = game_json
+        self.sprites.update(self.game_state)
     
-    def draw(self, color):
+    def draw(self, color=COLOR_WHITE):
         self.window.fill(color)
+        self.sprites.display(self.window)
         pygame.display.update()
     
     ########## Key Action Functionality Below ##########
 
-    # QUIT
+    # 'QUIT'
     # 'PLAY-SELECT'
     # 'REVEAL-SELECT'
     # 'PLAY'
@@ -379,7 +390,7 @@ class Interface:
                     return None
         return None # no action taken
 
-    def execute_action(self):
+    def execute_actions(self):
         # this implementation insures that one event happens per execute cycle
         actions = get_action(pygame.event.get())
 
@@ -389,14 +400,11 @@ class Interface:
         state, data = actions
 
         if state == 'QUIT':
-            running = False
-            pygame.display.quit()
-            net.quit()
-            pygame.quit()
+            self.execute_quit()
         elif state == 'PLAY':
-            self.execute_play()
+            self.execute_play(data)
         elif state == 'REVEAL':
-            self.execute_reveal()
+            self.execute_reveal(data)
         elif state == 'CYCLE':
             self.execute_cycle()
 
@@ -404,18 +412,22 @@ class Interface:
         # that we dont do multiple actions faster than we can see by mouse down repeatedly
     
     # these are the functions that figure out 
+    def execute_quit(self):
+        requests.append('QUIT')
+        state = 'QUIT'
 
-    def execute_reveal(self):
-        pass
-
-    def execute_play(self):
-        play_string = ''
-        card = ''
+    def execute_reveal(self, coords):
+        play_string = 'REVEAL' + self.sprites.card_clicked(coords)
         requests.append(play_string)
+        self.state = 'WAITING'
+
+    def execute_play(self, coords):
+        # card_clicked returns the string rep of the card
+        play_string = 'PLAY' + self.sprites.card_clicked(coords)
+        requests.append(play_string)
+        self.state = 'WAITING'
 
     # lol this is a simple one 
     def execute_cycle(self):
         requests.append('CYCLE')
-    
-    def messages(self):
-        return self.messages
+        self.state = 'WAITING'
