@@ -2,7 +2,7 @@
 
 # messages to server are 
 
-# CONNECT <username>
+# CONNECT <username> (with a private key for the master network module)
 # PLAY <card> <player id>
 # REVEAL <card> <player id> # reveal-won is the same as reveal, we will just check both
 # CYCLE
