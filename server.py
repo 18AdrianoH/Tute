@@ -22,7 +22,7 @@ class Server:
         
         self.master.bind() # binds to a socket with a port
         master.establish_connections() # might take a little while
-        
+
         self.start_game() # starts the game itself
 
     # will start two threads: one lets you quit by typing quit, the other games
@@ -51,7 +51,7 @@ class Server:
     
     # this processes a message from a user
     def process_client_message(self, player_id, message):
-        args = message.split(' ') # it should be a string by now
+        args = message.split(',') # it should be a string by now
         mtype = args[0]
         # they cycle if they press spacebar
         if mtype == 'CYCLE':

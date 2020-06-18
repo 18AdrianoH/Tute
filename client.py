@@ -13,10 +13,12 @@ from network import Channel
 def main():
     # onboard the network parameters
     print('Please enter the server\'s IP and port')
-    ip = input()
-    port = input()
+    server_ip = input()
+    server_port = int(input())
+    print('Please enter your username')
+    player_id = input()
 
-    net = Channel(server_ip, server_port)
+    net = Channel(server_ip, server_port, player_id)
     #gui = Interface() #TODO we'll use this bad boy later
 
     running = True

@@ -51,8 +51,8 @@ def gen_keys():
     return private_key.public_key(), private_key
 
 # message must be in bytes
-def encrypt(message, public_key):
-    encrypted_message = public_key.encrypt(
+def encrypt(message, key):
+    encrypted_message = key.encrypt(
         message,
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -63,8 +63,8 @@ def encrypt(message, public_key):
     return encrypted_message
 
 # message must be in bytes and will come out as bytes
-def decrypt(encrypted_message, private_key):
-    message = private_key.decrypt(
+def decrypt(encrypted_message, key):
+    message = key.decrypt(
         encrypted_message,
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -124,7 +124,7 @@ class Channel:
     # connects to the server and does the key exchange
     def connect(self):
         try:
-            self.socket.connect((self.server, self.port))
+            self.socket.connect((self.server_ip, self.server_port))
         except Exception as exc:
             raise exc
 
@@ -136,7 +136,7 @@ class Channel:
             raise TypeError('No Hello')
         # else do the key exchange
 
-        message = 'CONNECT ' + player_id + ' '
+        message = 'CONNECT,' + self.player_id + ','
         message = message.encode('utf-8')
         message = message + serialize_public_key(self.public_key)
 
@@ -152,7 +152,7 @@ class Channel:
         if recieved[:9] != b'CONNECTED':
             raise TypeError('No connected')
         # else
-        self.server_public_key = recieved.split(b' ')[1]
+        self.server_public_key = recieved.split(b',')[1]
         # yay!
     
     def quit(self):
@@ -185,7 +185,7 @@ class Channel:
 # CYCLE
 class Master:
     def __init__(self, server_ip, server_port):
-        self.private_key, self.public_key = gen_keys()
+        self.public_key, self.private_key = gen_keys()
 
         self.server_ip = server_ip
         self.server_port = server_port
@@ -226,21 +226,24 @@ class Master:
 
         message = None
         while not message:
-            message = connection.recf(MESSAGE_SIZE)
+            message = connection.recv(MESSAGE_SIZE)
         
         if message[:7] != b'CONNECT':
             raise TypeError('Wrong Connect message recieved')
         # else
 
         # create the response message handshake
-        message = 'CONNECTED '.encode('utf-8')
-        message += serialize_public_key(self.public_key)
-        connection.send(message, player_address)
+        send_message = 'CONNECTED,'.encode('utf-8')
+        send_message += serialize_public_key(self.public_key)
+        connection.send(send_message)
 
         # update data structures
-        _, id_bits, pub = message.split(b' ')
+        splt = message.split(b',')
+        id_bits = splt[1]
+        pub = splt[2]
 
-        self.address_info[address]['id'] = id_bits.encode('utf-8')
+        self.address_info[address] = {}
+        self.address_info[address]['id'] = id_bits.decode('utf-8')
         self.address_info[address]['pub'] = deserialize_public_key(pub)
         self.address_info[address]['connection'] = connection
 
@@ -254,7 +257,7 @@ class Master:
                 # connect to a new individual
                 connection, address = self.socket.accept()
                 connect_thread = threading.Thread(target=self.key_exchange, args=(connection, address))
-                thread.start()
+                connect_thread.start()
             except ConnectionAbortedError as err: # race condition connect after quitting
                 raise err
         return

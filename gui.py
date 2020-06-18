@@ -109,10 +109,10 @@ class CardSprite:
 # player = 0, 0, right = 0, 90, top = 0, 180, left = 0, 270
 
 class PlayerSprites:
-    def __init__(self, cards screen_width, screen_height, type, player_id):
+    def __init__(self, cards, screen_width, screen_height, type, player_id):
         self.player_id = player_id
 
-        self.type = type
+        self.type = type== 'LEFT'
         self.screen_height = screen_height
         self.screen_width = screen_width
 
@@ -142,7 +142,7 @@ class PlayerSprites:
             (0, 0) if self.type == 'PLAYER' else \
             (90, 90) if self.type == 'RIGHT' else \
             (0, 180) if self.type == 'TOP' else \
-            (270, 270) if self.type == 'LEFT'
+            (270, 270) if self.type == 'LEFT' else None
 
     # remember to use correctly rotated forms
     def init_card_dims(self):
@@ -166,7 +166,7 @@ class PlayerSprites:
             (0, self.screen_height - self.card_height) if self.type == 'PLAYER' else \
             (self.screen_height - self.card_width, self.screen_width - self.card_height) if self.type == 'RIGHT' else \
             (self.screen_width - self.card_width, 0) if self.type == 'TOP' else \
-            (0,0) if self.type == 'LEFT'
+            (0,0) if self.type == 'LEFT' else None
         
         self.update_cards(cards)
     
@@ -387,7 +387,7 @@ class Interface:
     # will return None if there is no action need be taken
     def get_action(events):
         for event in events:
-            if event.type == pygame.QUIT or event.type == pygame.KEYUP and event.key = K_q:
+            if event.type == pygame.QUIT or event.type == pygame.KEYUP and event.key == K_q:
                 return ('QUIT', )
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # left mid right scrollup scrolldown
