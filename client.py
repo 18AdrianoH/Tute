@@ -7,7 +7,7 @@
 # and it will have a simple installer to install python and the necessary dependencies on mac, windows, or linux
 
 from tute import deserialize
-from gui import GUI
+from gui import Interface
 from network import Channel
 
 def main():
