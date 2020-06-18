@@ -12,32 +12,32 @@ from network import Channel
 
 def main():
     # onboard the network parameters
-    print('Please enter your IP Address.')
+    print('Please enter the server\'s IP and port')
     ip = input()
-    print('Please enter 5555.')
     port = input()
 
     net = Channel(server_ip, server_port)
-    gui = Interface()
+    #gui = Interface() #TODO we'll use this bad boy later
 
     running = True
     while running:
         # see what the game state is and update our look
-        game_state = net.message()
-        gui.update(game_state)
-        gui.draw()
+        game_state = net.listen()
+        print(game_state)
+        #gui.update(game_state)
+        #gui.draw()
 
         # now get user actions
-        gui.execute() # execute events and store messages in internal structures
-        requests = gui.requests() # query message structures to see what requests users have made
-        for request in requests:
-            # if you quit you'd like to perhaps be able to reconnect...
-            # also we'll let people manually quit
-            if request == 'QUIT':
-                running = False
-                pygame.quit() # not sure if your pygame stuff is gonna work properly
-            else:
-                net.send(request)
+        #gui.execute() # execute events and store messages in internal structures
+        #requests = gui.requests() # query message structures to see what requests users have made
+        #for request in requests:
+        #    # if you quit you'd like to perhaps be able to reconnect...
+        #    # also we'll let people manually quit
+        #    if request == 'QUIT':
+        #        running = False
+        #        pygame.quit() # not sure if your pygame stuff is gonna work properly
+        #    else:
+        #        net.send(request)
 
 if __name__ == "__main__":
     main()

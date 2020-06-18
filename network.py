@@ -36,6 +36,7 @@ impossible for a man in the middle because neither private key is shared.
 """
 
 # this is basically overkill, but we need > 2048 for the very first message and it's probably ok
+# might actually need more for game-state? oh no!
 MESSAGE_SIZE = 4096 # recommended to be a power of 2 so you can do 1 << n for 2^n
 MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 
@@ -159,11 +160,14 @@ class Channel:
     
     def send(self, datas):
         for data in datas:
+            enc = self.encrypt(data.encode('utf-8'))
             try:
-                self.socket.send(data.encode(encoding='utf-8')) # data is a string lul
+                self.socket.send(enc)
             except socket.error as err:
-                print(err)
-            return self.socket.recv(MESSAGE_SIZE).decode() ## TODO
+                raise err
+    def listen(self):
+        message = self.decrypt(self.socket.recv(MESSAGE_SIZE)).decode('utf-8')
+        return message
 
 # for the future this has to be explicitely event driven, it's too hard to think of it otherwise
 
