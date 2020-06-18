@@ -1,5 +1,6 @@
 # so we can talk
 import socket
+import threading
 
 # so we can talk securely
 # generate
@@ -159,15 +160,16 @@ class Channel:
                 print(err)
             return self.client.recv(MESSAGE_SIZE).decode() ## TODO
 
+# for the future this has to be explicitely event driven, it's too hard to think of it otherwise
+
 # the master manages the game using Tute datastructures
 #
 # master response to CONNECT from player
 # CONNECTED <server_public_key>
 #
 # Master has to use sendto instead of send to use proper encryption
-
+# 
 # messages to server are 
-
 # CONNECT <username> (with a private key for the master network module)
 # PLAY <card> <player id>
 # REVEAL <card> <player id> # reveal-won is the same as reveal, we will just check both
@@ -180,9 +182,16 @@ class Master:
         self.server_port = server_port
 
         # maps player_ids to player public key
-        self.address_public_key = {}
-        self.address_player_id = {}
+        # info has 
+        # ['id'] = player_id
+        # ['connection'] = connection (socket object)
+        # ['pub'] = public key object
+        # and 
+        # address_info[address] = info
+        self.address_info = {}
+
         self.socket = None
+        self.connections = 0
 
         try:
             self.bind()
@@ -190,6 +199,8 @@ class Master:
             # ports are unsigned 16-bit integers, so the largest port is 65535
             print('Port should be a numerical port and server_ip should be an IP address (maybe DNS).')
             raise te
+        
+        self.establish_connections()
     
     # assuming that server_ip and server_port are legitimate and usable it will try to bind
     def bind(self):
@@ -200,12 +211,43 @@ class Master:
         except socket.error as socket_error:
             raise socket_error # later we might want to handle it some other way
     
+    # async key_exchange that is done with each player
+    def key_exchange(self, connection, address):
+        connection.send('HELLO'.encode('utf-8'))
+
+        message = None
+        while not message:
+            message = connection.recf(MESSAGE_SIZE)
+        
+        if message[:7] != b'CONNECT':
+            raise TypeError('Wrong Connect message recieved')
+        # else
+
+        # create the response message handshake
+        message = 'CONNECTED '.encode('utf-8')
+        message += serialize_public_key(self.public_key)
+        connection.send(message, player_address)
+
+        # update data structures
+        _, id_bits, pub = message.split(b' ')
+
+        self.address_info[address]['id'] = id_bits.encode('utf-8')
+        self.address_info[address]['pub'] = deserialize_public_key(pub)
+        self.address_info[address]['connection'] = connection
+        
+        self.connections += 1
+
+    # establishes the connections with each player by sending hello and then key exchanging
+    # remember TCP guarantees delivery
     def establish_connections(self):
-        connections = 0
+        connection, address = None
+
         while connections < MAX_CONNECTIONS:
             try:
+                # connect to a new individual
                 connection, address = self.socket.accept()
-                connections += 1
+                connect_thread = threading.Thread(target=self.key_exchange, args=(connection, address))
+                thread.start()
             except ConnectionAbortedError as err: # race condition connect after quitting
                 raise err
         return
@@ -214,88 +256,32 @@ class Master:
     # inner is encrypt with your pub, decrypt with my priv (so mitm can't listen)
     # outer is encrypt with my pri, decrypt with your pub (so mitm can't speak)
     def encrypt(self, message, address):
-        player_public_key = self.address_public_key[address]
+        player_public_key = self.address_info[address]['pub']
 
         enc = encrypt(message, player_public_key)
         enc = encrypt(enc, self.private_key)
         return enc
 
     def decrypt(self, encrypted_message, address):
-        player_public_key = self.address_public_key[address]
+        player_public_key = self.address_info[address]['pub']
 
         dec = decrypt(encrypted_message, self.private_key)
         dec = decrypt(dec, player_public_key)
         return dec
     
-    def individual_key_exchange(player_address, player_id, player_pem):
-        self.address_public_key[player_address] = deserialize_public_key(player_pem)
-        self.address_player_id[player_address] = player_id
-
-        # create the response message handshake
-        message = 'CONNECTED '.encode('utf-8')
-        message += serialize_public_key(self.public_key)
-
-        self.socket.sendto(message, player_address)
-
-        self.player_connected[player_id] = True
-
-        return player_id # returns player_id so that we can tell Tute later
-    
     def send_state(self, serialized_game_json):
         data = game_json.encode('utf-8')
+        data = self.encrypt(data)
 
-        for player, address in self.player_addresses.items():
-            self.socket.sendto()
-
-
-    def send(self, address):
-        pass
+        for address, info in self.address_info.items():
+            self.address_info[address]['connection'].send(data)
     
-    # ...use recvfrom() -> (bytes, address) to get the address
-    # this is so we can tell Tute which player_id made that move
+    # you can use recvfrom or like me you can just use the connection with each player
     def listen(self):
-        data, address = self.socket.recvfrom(MESSAGE_SIZE)
-
-"""
-# helper for start_listening
-def listen(self):
-    while self.running:
-        try:
-            connection, address = self.socket.accept()
-            print ('connected to {} who is using port {}'.format(address[0], str(address[1])))
-            player_thread = threading.Thread(target=self.process_response, args=(connection, address))
-            player_thread.start()
-        except ConnectionAbortedError as err:
-            # this should only be caused by a race condition where we tried to connect after quitting
-            # but before self.running was False so we still did it
-            # a better solution would involve locks but this should be fine for now
-            assert not self.running, 'Some other than the connection race condition may have occured'
-    return # threads close when you you return from a function
-
-def process_response(self, connection, address):
-        # initial connection message
-        connection.send('Connected'.encode('utf-8'))
-
-        connected = True
-        while connected:
-            try:
-                data = connection.recv(2048) # number of bits corresponds here to 256 bytes
-                decoded_data = data.decode(encoding='utf-8')
-
-                if not data:
-                    print('{} disconnected'.format(str(address)))
-                    connected = False
-                else:
-                    print('Recieved {}'.format(decoded_data))
-                    print('Sending {}'.format(reply))
-                    reply = self.process_client_message(decoded_data)
-                    connection.sendall(reply.encode(encoding='utf-8'))
-
-            except Exception as exc:
-                print(str(exc))
-                break # TODO figure out what to do here; right now we are just trying to avoid infinite loops
-        
-        connection.close()
-        print('Closing Thread...')
-        return # this will terminate a thread in python
-"""
+        # a list of (player_id, message)
+        messages_recieved = []
+        for address, info in self.address_info.items():
+            data = self.address_info[address]['connection'].recv(MESSAGE_SIZE)
+            data = self.decrypt(data)
+            messages_recieved.append((self.address_info[address]['id'], data))
+        return messages_recieved

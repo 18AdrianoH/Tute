@@ -1,7 +1,6 @@
 # server houses the main gaming logic and keeps track of who's playing
 
 import threading # for dealing with multiple requests
-import time # for time.sleep and more
 
 from network import Master # the network code
 from tute import Tute # our game lol
@@ -33,7 +32,7 @@ class Server:
         self.master.bind()
     
     def start_accepting(self):
-        master.establish_connections()
+        master.establish_connections() # might take a little while
 
     # will start two threads: one lets you quit by typing quit, the other games
     def start_game(self):
@@ -48,6 +47,7 @@ class Server:
         self.socket.close()
 
     def play(self):
+        ## TODO play the game (check for messages from players, give them to Tute, get state from Tute)
         pass
     
     ## TODO update to use Master
