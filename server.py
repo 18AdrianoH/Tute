@@ -54,43 +54,37 @@ class Server:
             requests = self.master.listen()
 
             for request in requests:
-                state_changed = process_client_message
+                state_changed = self.process_client_message(request[0], request[1]) 
             
             # someone did something meaningful
             if state_changed:
                 self.update_players(self)
     
-    ## TODO update to use Master
-    def process_client_message(self, message):
-        args = message.split(' ')
+    # this processes a message from a user
+    def process_client_message(self, player_id, message):
+        args = message.split(' ') # it should be a string by now
         mtype = args[0]
-        # they connect upon first connecting to the server
-        if mtype == 'CONNECT':
-            self.game.add_player(args[1]) # name of player
-            reply = 'CONNECTED {}'.format()
-            return reply
         # they cycle if they press spacebar
-        elif mtype == 'CYCLE':
+        if mtype == 'CYCLE':
             # this will try to start the game
             if self.game.state == 'WAITING' or self.game.state == 'TERMINAL':
-                if self.game.state == 'TERMINAL':
-                    self.game.reset_game()
-                self.game.start_game()
-                reply = 'PLAYING' + self.get_play_order()
-                return reply
+                self.game.increment_state() # might change the state if it's possible
+                return True # unfortunately does not always yield a change of state... sometimes there is no change
         # this is if they play a card
         elif mtype == 'PLAY':
             # will inform people of what cards in the center after playing a card
             self.game.play_card(args[1], args[2]) # name of player, card to play
-            # TODO every individual player needs to be notified of this
-            reply = 'CENTER'
-            for card in center:
-                if not card is None:
-                    reply += ' ' + card
-            return reply
+            return True
         # will reveal if not revealed and hide if revealed
         elif mtype == 'REVEAL':
-            pass # TODO
+            if args[1] in self.game.player_cards[player_id]:
+                self.game.reveal_card(args[1])
+                return True
+            elif args[1] in self.game.player_won_cards[player_id]:
+                self.game.reveal_won_card(args[1])
+                return True
+            return False
+        return False
     
     def update_players(self):
         # called when game state changes (should be sent to everyone)

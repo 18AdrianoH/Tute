@@ -463,3 +463,4 @@ class Interface:
     def execute_cycle(self):
         requests.append('CYCLE')
         self.state = 'WAITING'
+## do note that a client reads from requests
