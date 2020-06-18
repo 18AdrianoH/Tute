@@ -7,6 +7,9 @@ import pygame
 # we will use hitboxes and mouse clicks
 # a left mouse click plays the card
 # a right mouse click reveals the card
+
+# interesting thing to note is that if you draw the last things drawn are on the top
+# so basically we might have to think about that in some cases maybe?
 """
     .__.
     |__|  | | | | | | | | | | | |
@@ -35,6 +38,8 @@ COLOR_WHITE = (255, 255, 255)
 CARD_HEIGHT_TO_WIDTH_RATIO = 279.0/201.0 # this is width/height
 CARD_WIDTHS_PER_SCREEN = 12
 CARD_DENSITY = 2 # 1/CARD_DENSITY is how much we show of each card
+INVERSE_CENTER_X = 2
+INVERSE_CENTER_Y = 2
 
 #################### Sprite Types and Graphics Helpers ####################
 # A dummy card sprite can have None as its 'card' or we can just put a placeholder
@@ -265,10 +270,18 @@ class Sprites:
         self.screen_width = screen_width
         self.screen_height = screen_height
 
+        # lol copy paste because I forgot to add center the first time around
+        self.center_card_width = self.screen_width / CARD_WIDTHS_PER_SCREEN
+        self.center_card_height = CARD_HEIGHT_TO_WIDTH_RATIO * self.center_card_width
+        self.center_card_width = int(self.center_card_width)
+        self.center_card_height = int(self.center_card_height)
+
         self.types = ['PLAYER', 'RIGHT', 'TOP', 'LEFT']
 
         # order is bot, right, top, left
         self.player_sprites = []
+
+        self.center_sprites = []
 
         index = 0
         while player_order[bot_index] != player_id:
@@ -292,6 +305,9 @@ class Sprites:
     def display(self, window):
         for player_sprites in self.player_sprites:
             player_sprites.display(window)
+        
+        for sprite in self.center_sprites:
+            sprite.display(window)
     
     # we only react to cards clicked if they are ours (we don't get to choose what to do with others' cards)
     def card_clicked(self, xy):
@@ -310,7 +326,22 @@ class Sprites:
                 game_state['revealed cards'], game_state['revealed won cards']
                 )
 
+        self.center_sprites = []
+        i = 0
+        center = game_state['center']
+        x_i = int(self.screen_width / INVERSE_CENTER_X)
+        y_i = int(self.screen_height / INVERSE_CENTER_Y)
+        offset = int(self.center_card_width / CARD_DENSITY)
+        while i < len(center) and center[i] is not None:
+            if i > 0:
+                x_i += offset # usual left to right action
+            self.center_sprites.append(
+                CardSprite(center[i], self.center_card_width, self.center_card_height, 0, x_i, y_i, False)
+            )
+
 #################### Orchestration for Graphics Below ####################
+
+## TODO add center
 
 # will display a pygame game and return messages based on in user input
 # it takes in game state and uses that to display and returns messages
@@ -337,6 +368,7 @@ class Interface:
     def draw(self, color=COLOR_WHITE):
         self.window.fill(color)
         self.sprites.display(self.window)
+        # display center cards
         pygame.display.update()
     
     ########## Key Action Functionality Below ##########

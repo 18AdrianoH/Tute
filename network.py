@@ -97,6 +97,8 @@ class Channel:
 
         self.server_public_key = None
 
+        self.connected = False
+
     def connect(self):
         try:
             self.client.connect((self.server, self.port))
@@ -120,6 +122,7 @@ class Channel:
             data = data.split(b' ')
             if data[0].decode('utf-8') == 'CONNECTED':
                 self.server_public_key = deserialize_public_key(data[1])
+                self.connected = True
                 return
             # else try again I guess
     
@@ -146,6 +149,8 @@ class Master:
         self.player_public_keys = {}
         # maps player to ip, port
         self.players_addresses = {}
+        # whether we've already key exchnaged with this player
+        self.player_connected = {}
     
     # ...use recvfrom() -> (bytes, address) to get the address
     def individual_key_exchange(player_address, player_id, player_public_key):
@@ -157,3 +162,5 @@ class Master:
 
         # not defined TODO
         self.socket.sendto(message, player_address)
+
+        self.player_connected[player_id] = True
