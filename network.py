@@ -36,7 +36,7 @@ impossible for a man in the middle because neither private key is shared.
 """
 
 # this is basically overkill, but we need > 2048 for the very first message and it's probably ok
-MESSAGE_SIZE = 4096
+MESSAGE_SIZE = 4096 # recommended to be a power of 2 so you can do 1 << n for 2^n
 MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 
 ########## Methods that are shared ##########
@@ -100,19 +100,17 @@ def deserialize_public_key(pem):
 class Channel:
     def __init__(self, server_ip, server_port, player_id):
         # followed a tutorial and I think I might change the structure a bit
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = server_ip
-        self.port = server_port
-        self.id = self.connect()
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_ip = server_ip
+        self.server_port = server_port
 
         self.player_id = player_id
 
         # assymetric encryption 
         self.public_key, self.private_key = gen_keys()
-
         self.server_public_key = None
 
-        self.connected = False
+        self.connect()
     
     # message must be bytes
     # inner is encrypt with your pub, decrypt with my priv (so mitm can't listen)
@@ -122,43 +120,50 @@ class Channel:
     def decrypt(self, encrypted_message):
         return decrypt(encrypted_message, decrypt(encrypted_message, self.private_key), self.server_public_key)
 
+    # connects to the server and does the key exchange
     def connect(self):
         try:
-            self.client.connect((self.server, self.port))
+            self.socket.connect((self.server, self.port))
         except Exception as exc:
-            print('Failed to Connect, exception information below.')
-            print(str(exc))
-        return self.client.recv(MESSAGE_SIZE).decode(encoding='utf-8')
-    
-    def key_exchange(self):
+            raise exc
+
+        recieved = None
+        while not recieved:
+           recieved = self.socket.recv(MESSAGE_SIZE)
+        
+        if recieved[:5] != b'HELLO':
+            raise TypeError('No Hello')
+        # else do the key exchange
+
         message = 'CONNECT ' + player_id + ' '
         message = message.encode('utf-8')
         message = message + serialize_public_key(self.public_key)
 
         # send the master a message to connect
         # remember that we only talk to the master on this socket so no need to sendto
-        self.client.send(message)
+        self.socket.send(message)
 
         # wait for a response
-        while True:
-            data = self.client.recv(MESSAGE_SIZE)
-            data = data.split(b' ')
-            if data[0].decode('utf-8') == 'CONNECTED':
-                self.server_public_key = deserialize_public_key(data[1])
-                self.connected = True
-                return
-            # else try again I guess
+        recieved = None
+        while not recieved:
+            recieved = self.socket.recv(MESSAGE_SIZE)
+        
+        if recieved[:9] != b'CONNECTED':
+            raise TypeError('No connected')
+        # else
+        self.server_public_key = recieved.split(b' ')[1]
+        # yay!
     
     def quit(self):
-        self.client.close()
+        self.socket.close()
     
     def send(self, datas):
         for data in datas:
             try:
-                self.client.send(data.encode(encoding='utf-8')) # data is a string lul
+                self.socket.send(data.encode(encoding='utf-8')) # data is a string lul
             except socket.error as err:
                 print(err)
-            return self.client.recv(MESSAGE_SIZE).decode() ## TODO
+            return self.socket.recv(MESSAGE_SIZE).decode() ## TODO
 
 # for the future this has to be explicitely event driven, it's too hard to think of it otherwise
 
