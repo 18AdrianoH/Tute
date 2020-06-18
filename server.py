@@ -19,8 +19,9 @@ class Server:
         self.master = Master(self.server_ip, self.server_port)
         self.game = Tute()
         
-        self.start_networking()
-        self.start()
+        self.start_networking() # binds to a socket with a port
+        self.start_accepting() # accepts connections from clients and does key exchange
+        self.start_game() # starts the game itself
 
     # launches the networking for the server
     # if it fails just try again with different values
@@ -30,13 +31,15 @@ class Server:
         self.port = self.get_port()
 
         self.master.bind()
+    
+    def start_accepting(self):
+        master.establish_connections()
 
-    # will start a loop that will run a loop that allows you to shut down the server
-    # and also at the same time waits for requests from clients to arrive
-    def start(self):
+    # will start two threads: one lets you quit by typing quit, the other games
+    def start_game(self):
         print('Running... type \'quit\' to shut it down')
         self.running = True
-        loop_thread = threading.Thread(target=self.listen)
+        loop_thread = threading.Thread(target=self.play)
         loop_thread.start()
         # at the same time take input until we get the message to quit
         while input() != 'quit':
@@ -44,19 +47,10 @@ class Server:
         self.running = False
         self.socket.close()
 
-    def start(self):
-        self.start_networking()
-        self.start_game()
-        self.start_listening()
-
-    # called when game state changes (should be sent to everyone)
-    # 1. someone plays a card
-    # 2. someone reveals/hides are a card
-    # 3. someone cycles
-    def get_on_start_on_round_on_play_on_reveal_message(self):
-        # master handles the networking
-        self.master.send_state(serialize(tute))
-
+    def play(self):
+        pass
+    
+    ## TODO update to use Master
     def process_client_message(self, message):
         args = message.split(' ')
         mtype = args[0]
@@ -87,33 +81,15 @@ class Server:
         # will reveal if not revealed and hide if revealed
         elif mtype == 'REVEAL':
             pass # TODO
+    
+    def update_players(self):
+        # called when game state changes (should be sent to everyone)
+        # 1. someone plays a card
+        # 2. someone reveals/hides are a card
+        # 3. someone cycles
 
-    def process_response(self, connection, address):
-        # initial connection message
-        connection.send('Connected'.encode('utf-8'))
-
-        connected = True
-        while connected:
-            try:
-                data = connection.recv(2048) # number of bits corresponds here to 256 bytes
-                decoded_data = data.decode(encoding='utf-8')
-
-                if not data:
-                    print('{} disconnected'.format(str(address)))
-                    connected = False
-                else:
-                    print('Recieved {}'.format(decoded_data))
-                    print('Sending {}'.format(reply))
-                    reply = self.process_client_message(decoded_data)
-                    connection.sendall(reply.encode(encoding='utf-8'))
-
-            except Exception as exc:
-                print(str(exc))
-                break # TODO figure out what to do here; right now we are just trying to avoid infinite loops
-        
-        connection.close()
-        print('Closing Thread...')
-        return # this will terminate a thread in python
+        # master handles the networking
+        self.master.send_state(serialize(tute))
 
 
 if __name__ == "__main__":
