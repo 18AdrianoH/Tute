@@ -17,6 +17,8 @@ class Server:
         
         self.master = Master(self.server_ip, self.server_port)
         self.game = Tute()
+
+        self.running = False
         
         self.start_networking() # binds to a socket with a port
         self.start_accepting() # accepts connections from clients and does key exchange
@@ -47,8 +49,16 @@ class Server:
         self.socket.close()
 
     def play(self):
-        ## TODO play the game (check for messages from players, give them to Tute, get state from Tute)
-        pass
+        while self.running:
+            state_changed = False
+            requests = self.master.listen()
+
+            for request in requests:
+                state_changed = process_client_message
+            
+            # someone did something meaningful
+            if state_changed:
+                self.update_players(self)
     
     ## TODO update to use Master
     def process_client_message(self, message):

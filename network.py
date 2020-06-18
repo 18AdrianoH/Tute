@@ -234,7 +234,7 @@ class Master:
         self.address_info[address]['id'] = id_bits.encode('utf-8')
         self.address_info[address]['pub'] = deserialize_public_key(pub)
         self.address_info[address]['connection'] = connection
-        
+
         self.connections += 1
 
     # establishes the connections with each player by sending hello and then key exchanging
@@ -282,6 +282,6 @@ class Master:
         messages_recieved = []
         for address, info in self.address_info.items():
             data = self.address_info[address]['connection'].recv(MESSAGE_SIZE)
-            data = self.decrypt(data)
+            data = self.decrypt(data).decode('utf-8') # it's bits
             messages_recieved.append((self.address_info[address]['id'], data))
         return messages_recieved
