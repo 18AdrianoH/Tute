@@ -253,7 +253,7 @@ class Tute:
         self.center_index += 1
 
         # if it's the first card played it determines the suit for the round
-        if self.round_suit = None:
+        if self.round_suit == None:
             self.round_suit = card_str[2] # 3rd thing is the suit
     
     # Reveal a card the player with player_id has (precondition that he/she has it)
@@ -296,7 +296,7 @@ def card_beats(challenger, defender, rs, gs):
 # Return the card out of a card list that wins from beginning to end
 def get_winning_card(cards_list, rs, gs):
     winning_card = cards_list[0]
-    for card in cards_list
+    for card in cards_list:
         if card_beats(card, winning_card, rs, gs):
             winning_card = card
     return winning_card

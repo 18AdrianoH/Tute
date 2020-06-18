@@ -13,28 +13,17 @@ class Server:
     def __init__(self):
         print('Enter server IP, then server port.')
         self.server_ip = input() # use ipconfig getifaddr en0
-        self.port = int(input())
+        self.server_port = int(input())
         
         self.master = Master(self.server_ip, self.server_port)
         self.game = Tute()
 
         self.running = False
         
-        self.start_networking() # binds to a socket with a port
-        self.start_accepting() # accepts connections from clients and does key exchange
-        self.start_game() # starts the game itself
-
-    # launches the networking for the server
-    # if it fails just try again with different values
-    def start_networking(self):
-        # do this at start time because otherwise might lose access in the interim
-        self.server_ip = self.get_ip()
-        self.port = self.get_port()
-
-        self.master.bind()
-    
-    def start_accepting(self):
+        self.master.bind() # binds to a socket with a port
         master.establish_connections() # might take a little while
+        
+        self.start_game() # starts the game itself
 
     # will start two threads: one lets you quit by typing quit, the other games
     def start_game(self):

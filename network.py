@@ -206,7 +206,7 @@ class Master:
     def bind(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.bind((self.server_ip, self.port))
+            self.socket.bind((self.server_ip, self.server_port))
             self.socket.listen(MAX_CONNECTIONS)
         except socket.error as socket_error:
             raise socket_error # later we might want to handle it some other way
@@ -240,9 +240,7 @@ class Master:
     # establishes the connections with each player by sending hello and then key exchanging
     # remember TCP guarantees delivery
     def establish_connections(self):
-        connection, address = None
-
-        while connections < MAX_CONNECTIONS:
+        while self.connections < MAX_CONNECTIONS:
             try:
                 # connect to a new individual
                 connection, address = self.socket.accept()
