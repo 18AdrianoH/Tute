@@ -176,3 +176,7 @@ Code I wrote by accident:
             if card_sprite.card == card:
                 card_sprite.back = not card_sprite.back
                 return
+
+June 18th
+
+Yea I had to change ' ' for split to \n and then to , to avoid breaking the key

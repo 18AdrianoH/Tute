@@ -12,8 +12,8 @@ class Server:
     # a server will initially figure out what parameters to try and use
     def __init__(self):
         print('Enter server IP, then server port.')
-        self.server_ip = input() # use ipconfig getifaddr en0
-        self.server_port = int(input())
+        self.server_ip = '10.0.0.211'#input() # use ipconfig getifaddr en0
+        self.server_port = 5555#int(input())
         
         self.master = Master(self.server_ip, self.server_port)
         self.game = Tute()
@@ -46,8 +46,9 @@ class Server:
                 state_changed = self.process_client_message(request[0], request[1]) 
             
             # someone did something meaningful
-            if state_changed:
-                self.update_players(self)
+            #if state_changed:
+            # listen will block on the other end if we need the state to change >:( lul
+            self.update_players(self)
     
     # this processes a message from a user
     def process_client_message(self, player_id, message):

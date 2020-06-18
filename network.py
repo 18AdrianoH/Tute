@@ -37,7 +37,9 @@ impossible for a man in the middle because neither private key is shared.
 
 # this is basically overkill, but we need > 2048 for the very first message and it's probably ok
 # might actually need more for game-state? oh no!
-MESSAGE_SIZE = 4096 # recommended to be a power of 2 so you can do 1 << n for 2^n
+# 1<<12 = 4096
+# 1<<14 ~= 1K bits (one Kb)
+MESSAGE_SIZE = 1<<14 # recommended to be a power of 2 so you can do 1 << n for 2^n
 MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 
 ########## Methods that are shared ##########
@@ -154,6 +156,7 @@ class Channel:
         # else
         self.server_public_key = recieved.split(b',')[1]
         # yay!
+        print(self.server_public_key)
     
     def quit(self):
         self.socket.close()
@@ -166,7 +169,9 @@ class Channel:
             except socket.error as err:
                 raise err
     def listen(self):
+        print('listen')
         message = self.decrypt(self.socket.recv(MESSAGE_SIZE)).decode('utf-8')
+        print(message)
         return message
 
 # for the future this has to be explicitely event driven, it's too hard to think of it otherwise
@@ -200,7 +205,6 @@ class Master:
         self.address_info = {}
 
         self.socket = None
-        self.connections = 0
 
         try:
             self.bind()
@@ -210,6 +214,7 @@ class Master:
             raise te
         
         self.establish_connections()
+        print('established all four connections')
     
     # assuming that server_ip and server_port are legitimate and usable it will try to bind
     def bind(self):
@@ -247,17 +252,19 @@ class Master:
         self.address_info[address]['pub'] = deserialize_public_key(pub)
         self.address_info[address]['connection'] = connection
 
-        self.connections += 1
+        print('connected with ' + self.address_info[address]['id'])
 
     # establishes the connections with each player by sending hello and then key exchanging
     # remember TCP guarantees delivery
     def establish_connections(self):
-        while self.connections < MAX_CONNECTIONS:
+        connections = 0
+        while connections < MAX_CONNECTIONS:
+            print('.')
             try:
                 # connect to a new individual
                 connection, address = self.socket.accept()
-                connect_thread = threading.Thread(target=self.key_exchange, args=(connection, address))
-                connect_thread.start()
+                self.key_exchange(connection, address) # lol it can only do one at a time
+                connections += 1
             except ConnectionAbortedError as err: # race condition connect after quitting
                 raise err
         return

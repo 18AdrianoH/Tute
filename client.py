@@ -13,8 +13,8 @@ from network import Channel
 def main():
     # onboard the network parameters
     print('Please enter the server\'s IP and port')
-    server_ip = input()
-    server_port = int(input())
+    server_ip = '10.0.0.211'#input() # TODO
+    server_port = 5555#int(input())
     print('Please enter your username')
     player_id = input()
 
