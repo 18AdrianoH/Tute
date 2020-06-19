@@ -351,12 +351,19 @@ class Interface:
 
         self.player = player_id # who this interface is for
         self.game_state = game_json # what the game looks like right now
-        self.sprites = Sprites(self.game_state, player_id) # sprites to show for this person
         self.requests = [] # queue of requests for the server (we append, client pops)
 
         self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        self.screen_width, self.screen_height = pygame.display.get_surface().get_size()
         pygame.display.set_caption('Tute Game Client Interface')
+
+        self.screen_width, self.screen_height = pygame.display.get_surface().get_size()
+        self.sprites = Sprites(
+            self.game_state['player cards'],
+            self.game_state['player order'], 
+            player_id, 
+            self.screen_width, 
+            self.screen_height
+            ) # sprites to show for this person
 
         self.action_state = 'WAITING'
 

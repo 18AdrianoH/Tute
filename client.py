@@ -25,6 +25,7 @@ def main():
     while running:
         # see what the game state is and update our look
         game_state = net.listen()
+        print('to play ', game_state['to play'])
 
         if gui == None:
             gui = Interface(player_id, game_state)
