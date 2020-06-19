@@ -36,7 +36,8 @@ We should use signing to verify that the messages were from teh correct sender b
 # might actually need more for game-state? oh no!
 # 1<<12 = 4096
 # 1<<14 ~= 1K bits (one Kb)
-MESSAGE_SIZE = 1<<14 # recommended to be a power of 2 so you can do 1 << n for 2^n
+MESSAGE_SIZE = 1<<11 # recommended to be a power of 2 so you can do 1 << n for 2^n
+KEY_SIZE = 1<<11 # LOL
 MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 
 ########## Methods that are shared ##########
@@ -44,7 +45,7 @@ MAX_CONNECTIONS = 4 # maximum number of people allowed to connect
 def gen_keys():
     private_key = rsa.generate_private_key(
             public_exponent=65537, # they recommend this unless you have a reason to do otherwise
-            key_size=2048, # extra extra secure lol
+            key_size=KEY_SIZE, # extra extra secure lol
             backend=default_backend()
         )
     return private_key.public_key(), private_key
@@ -118,10 +119,12 @@ class Channel:
     # inner is encrypt with your pub, decrypt with my priv (so mitm can't listen)
     # outer is encrypt with my pri, decrypt with your pub (so mitm can't speak)
     def encrypt(self, message):
-        return encrypt(message, self.server_public_key)
+        return message
+        #return encrypt(message, self.server_public_key)
 
     def decrypt(self, encrypted_message):
-        return decrypt(encrypted_message, self.private_key)
+        return encrypted_message
+        #return decrypt(encrypted_message, self.private_key)
 
     # connects to the server and does the key exchange
     def connect(self):
@@ -277,12 +280,15 @@ class Master:
     # inner is encrypt with your pub, decrypt with my priv (so mitm can't listen)
     # outer is encrypt with my pri, decrypt with your pub (so mitm can't speak)
     def encrypt(self, message, address):
-        return encrypt(message, self.address_info[address]['pub'])
+        return message
+        #return encrypt(message, self.address_info[address]['pub'])
 
     def decrypt(self, encrypted_message, address):
-        return decrypt(encrypted_message, self.private_key)
+        return encrypted_message
+        #return decrypt(encrypted_message, self.private_key)
     
     def send_state(self, data):
+        assert len(data) < len(self.key), len(data)
         # data is a bytes type
         for address, info in self.address_info.items():
             send_data = self.encrypt(data, address)

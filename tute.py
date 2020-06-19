@@ -219,9 +219,9 @@ class Tute:
     # Add a player if we are in the WAITING state
     def add_player(self, player_id):
         if self.state == 'WAITING':
-            if len(self.player_order) == 4:
+            if len(self.player_order) >= 4:
                 raise InvalidAction('Already have four players.')
-            elif player_id in player_order:
+            elif player_id in self.player_order:
                 raise InvalidAction('Player already joined.')
             else:
                 self.player_order.append(player_id)
@@ -230,7 +230,7 @@ class Tute:
                 self.player_cards_state[player_id] = None #init when we start the game
                 self.player_won_cards[player_id] = None # init when we start the game
         else:
-            raise InvalidAction('Can only add players in the WAITING state.')
+            print('Can only add players in the WAITING state.') # LOL
     
     # Plays a card that player_id (player) has
     def play_card(self, player_id, card):
@@ -313,7 +313,7 @@ def get_winning_card(cards_list, rs, gs):
     return winning_card
 
 # Card generation code
-def get_cards():
+def gen_cards():
     cards = [suit + '_' + value for suit in SUITS for value in VALUES]
     random.shuffle(cards)
     return cards

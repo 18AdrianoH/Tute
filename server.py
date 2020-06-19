@@ -19,6 +19,10 @@ class Server:
         self.game = Tute()
         self.master = Master(self.server_ip, self.server_port) # master automatically does handshakes
 
+        # LOL
+        for address, info in self.master.address_info.items():
+            self.game.add_player(info['id'])
+
         self.running = False
         
         self.start_game() # starts the game itself
