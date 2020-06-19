@@ -25,12 +25,14 @@ def main():
     while running:
         # see what the game state is and update our look
         game_state = net.listen()
+        print("...")
         print(game_state)
         #gui.update(game_state)
         #gui.draw()
 
         # now get user actions
         #gui.execute() # execute events and store messages in internal structures
+        net.send('CYCLE')
         #requests = gui.requests() # query message structures to see what requests users have made
         #for request in requests:
         #    # if you quit you'd like to perhaps be able to reconnect...

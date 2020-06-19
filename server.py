@@ -6,6 +6,7 @@ from network import Master # the network code
 from tute import Tute # our game lol
 from tute import serialize # serializes the Tute game
 
+THREAD_TIMEOUT = 3.0
 
 # server is the executor of our game
 class Server:
@@ -24,20 +25,26 @@ class Server:
 
     # will start two threads: one lets you quit by typing quit, the other games
     def start_game(self):
-        print('Running... type \'quit\' to shut it down')
+        #print('Running... type \'quit\' to shut it down')
         self.running = True
-        loop_thread = threading.Thread(target=self.play)
-        loop_thread.start()
+        #loop_thread = threading.Thread(target=self.play)
+        #loop_thread.start()
+        self.play() # LOL
         # at the same time take input until we get the message to quit
-        while input() != 'quit':
-            pass
-        self.running = False
-        self.socket.close()
+        #while input() != 'quit':
+        #    pass
+        #self.running = False
+        #self.master.socket.close()
+        #loop_thread.join(THREAD_TIMEOUT) # doesn't work because it's waiting for a lock
+
 
     def play(self):
+        print('playing')
         while self.running:
-            state_changed = False
+            print('.')
+            #state_changed = False
             requests = self.master.listen()
+            print('read requests')
 
             for request in requests:
                 state_changed = self.process_client_message(request[0], request[1]) 
@@ -46,6 +53,9 @@ class Server:
             #if state_changed:
             # listen will block on the other end if we need the state to change >:( lul
             self.master.send_state(serialize(self.game)) # update players
+            print('sent updated state')
+        print('done playing')
+        return
     
     # this processes a message from a user
     def process_client_message(self, player_id, message):

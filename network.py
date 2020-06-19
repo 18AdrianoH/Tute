@@ -114,6 +114,8 @@ class Channel:
         self.server_public_key = None
 
         self.connect()
+        # yay!
+        print('connected')
     
     # message must be bytes
     # inner is encrypt with your pub, decrypt with my priv (so mitm can't listen)
@@ -158,8 +160,6 @@ class Channel:
             raise TypeError('No connected')
         # else
         self.server_public_key = recieved.split(b',')[1]
-        # yay!
-        print('connected')
     
     def quit(self):
         self.socket.close()
@@ -171,6 +171,7 @@ class Channel:
                 self.socket.send(enc)
             except socket.error as err:
                 raise err
+
     def listen(self):
         message = self.socket.recv(MESSAGE_SIZE)
         print(message)
