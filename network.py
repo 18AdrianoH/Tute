@@ -13,24 +13,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-"""
-This class is used as a sort of channel. Client.py uses it to talk to server.
-Server is it's own beast.
+#https://nitratine.net/blog/post/asymmetric-encryption-and-decryption-in-python/
 
-Note to self: TCP GUARANTEES delivery. This is very useful/good.
-Also it has guaranteed order.
-
-Note we would have to store to a file to make this work for disconnects and reconnects
-https://nitratine.net/blog/post/asymmetric-encryption-and-decryption-in-python/
-is a good tutorial I followed but not wholely
-
-Right now if you hve to disconnect the game has to restart.
-
-BTW where I say IP I think it's also possible to use a DNS name as well. I'm not sure but I'll try.
-
-We should use signing to verify that the messages were from teh correct sender but lol
-(they can't spy but they can inject >:( )
-"""
 
 # this is basically overkill, but we need > 2048 for the very first message and it's probably ok
 # might actually need more for game-state? oh no!

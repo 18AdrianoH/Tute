@@ -1,11 +1,3 @@
-# un juego de tute para jugar online con la familia
-# client has some basic functionality for displaying cards and helping you make choices which are then sent to the server
-
-# this game will have a simple gui where you see your cards and whats on the table
-# packets sent and recieved will be encrypted
-# it will have basic timers to make sure people don't take too long
-# and it will have a simple installer to install python and the necessary dependencies on mac, windows, or linux
-
 import json #LMAO
 from tute import deserialize, default_game_state
 from gui import Interface
