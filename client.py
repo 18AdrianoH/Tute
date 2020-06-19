@@ -19,12 +19,15 @@ def main():
     player_id = input()
 
     net = Channel(server_ip, server_port, player_id)
-    gui = Interface() 
+    gui = None
 
     running = True
     while running:
         # see what the game state is and update our look
         game_state = net.listen()
+
+        if gui == None:
+            gui = Interface(player_id, game_state)
         #print("...")
         #print(game_state)
         #gui.update(game_state)

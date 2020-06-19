@@ -302,7 +302,7 @@ class Master:
             print('listening to ', address)
             data = self.address_info[address]['connection'].recv(MESSAGE_SIZE)
             if len(data) > 0:
-                print('recieved ', data)
+                #print('recieved ', data)
                 data = self.decrypt(data, address).decode('utf-8') # it's bits
                 messages_recieved.append((self.address_info[address]['id'], data))
         return messages_recieved
