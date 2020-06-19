@@ -154,7 +154,7 @@ class Channel:
         if recieved[:9] != b'CONNECTED':
             raise TypeError('No connected')
         # else
-        self.server_public_key = recieved.split(b',')[1]
+        self.server_public_key = deserialize_public_key(recieved.split(b',')[1])
     
     def quit(self):
         self.socket.close()
