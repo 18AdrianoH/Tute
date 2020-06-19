@@ -6,6 +6,7 @@
 # it will have basic timers to make sure people don't take too long
 # and it will have a simple installer to install python and the necessary dependencies on mac, windows, or linux
 
+import json #LMAO
 from tute import deserialize
 from gui import Interface
 from network import Channel
@@ -24,7 +25,7 @@ def main():
     running = True
     while running:
         # see what the game state is and update our look
-        game_state = net.listen()
+        game_state = json.loads(net.listen())
         print('to play ', game_state['to play'])
 
         if gui == None:
