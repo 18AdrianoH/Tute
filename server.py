@@ -59,22 +59,22 @@ class Server:
         listener.start()
 
         while self.running:
-            print('.')
             # listen will block on the other end if we need the state to change >:( lul
             self.master.send_state(serialize(self.game)) # update players
             print('sent updated state')
-            #state_changed = False
-            print('read requests')
-
+            
+            print('reading requests')
             for request in REQUESTS:
                 state_changed = self.process_client_message(request[0], request[1]) 
             REQUESTS = []
+            print('read requests')
 
         print('done playing')
         return
     
     # this processes a message from a user
     def process_client_message(self, player_id, message):
+        print('Processing')
         args = message.split(',') # it should be a string by now
         mtype = args[0]
         # they cycle if they press spacebar
