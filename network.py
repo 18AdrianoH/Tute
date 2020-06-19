@@ -156,7 +156,7 @@ class Channel:
         # else
         self.server_public_key = recieved.split(b',')[1]
         # yay!
-        print(self.server_public_key)
+        print('connected')
     
     def quit(self):
         self.socket.close()
@@ -169,8 +169,9 @@ class Channel:
             except socket.error as err:
                 raise err
     def listen(self):
-        print('listen')
-        message = self.decrypt(self.socket.recv(MESSAGE_SIZE)).decode('utf-8')
+        message = self.socket.recv(MESSAGE_SIZE)
+        print(message)
+        message = self.decrypt(message).decode('utf-8')
         print(message)
         return message
 

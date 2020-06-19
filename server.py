@@ -15,14 +15,11 @@ class Server:
         self.server_ip = '10.0.0.211'#input() # use ipconfig getifaddr en0
         self.server_port = 5555#int(input())
         
-        self.master = Master(self.server_ip, self.server_port)
         self.game = Tute()
+        self.master = Master(self.server_ip, self.server_port) # master automatically does handshakes
 
         self.running = False
         
-        self.master.bind() # binds to a socket with a port
-        master.establish_connections() # might take a little while
-
         self.start_game() # starts the game itself
 
     # will start two threads: one lets you quit by typing quit, the other games
@@ -48,7 +45,7 @@ class Server:
             # someone did something meaningful
             #if state_changed:
             # listen will block on the other end if we need the state to change >:( lul
-            self.update_players(self)
+            self.master.send_state(serialize(self.game)) # update players
     
     # this processes a message from a user
     def process_client_message(self, player_id, message):
@@ -75,15 +72,7 @@ class Server:
                 return True
             return False
         return False
-    
-    def update_players(self):
-        # called when game state changes (should be sent to everyone)
-        # 1. someone plays a card
-        # 2. someone reveals/hides are a card
-        # 3. someone cycles
-
-        # master handles the networking
-        self.master.send_state(serialize(tute))
+        
 
 
 if __name__ == "__main__":

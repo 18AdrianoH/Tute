@@ -28,17 +28,28 @@ def to_dict(game):
     game_dict = {}
     # player whose turn it is (the one to play now)
     game_dict['state'] = game.state
-    game_dict['game suit'] = game.game_suit
 
-    game_dict['to play'] = game.get_turn_player()
-    game_dict['player order'] = game.player_order
-    game_dict['center'] = game.center # be careful with None -> 'null' but decode should be ok
+    if game.state == 'WAITING':
+        game_dict['game suit'] = None
+        game_dict['to play'] = None
+        game_dict['player order'] = None
+        game_dict['center'] = None
+        game_dict['players cards'] = None
+        game_dict['won cards'] = None
+        game_dict['revealed cards'] = None
+        game_dict['revealed won cards'] = None
+    else:
+        game_dict['game suit'] = game.game_suit
 
-    game_dict['players cards'] = game.player_cards
-    game_dict['won cards'] = game.player_won_cards
+        game_dict['to play'] = game.get_turn_player()
+        game_dict['player order'] = game.player_order
+        game_dict['center'] = game.center # be careful with None -> 'null' but decode should be ok
 
-    game_dict['revealed cards'] = game.player_cards_state
-    game_dict['revealed won cards'] = game.player_won_cards_state
+        game_dict['players cards'] = game.player_cards
+        game_dict['won cards'] = game.player_won_cards
+
+        game_dict['revealed cards'] = game.player_cards_state
+        game_dict['revealed won cards'] = game.player_won_cards_state
 
     return game_dict
 # serialize a game dict into bits to be sent
