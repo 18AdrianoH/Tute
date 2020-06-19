@@ -28,11 +28,8 @@ Right now if you hve to disconnect the game has to restart.
 
 BTW where I say IP I think it's also possible to use a DNS name as well. I'm not sure but I'll try.
 
-A note about the handshake: the way I do it I encrypt TWICE (once with my pri, once with their pub) which means that
-to decrypt you always need one pub (their pub) and one pri (their pri), meaning that it's impossible to encrypt. More
-importantly (because using just the pub would mean they could encrypt if they heard it, and using just the pri would mean
-they could decrypt if they heard it) it means that to encrypt you need at least one of the two private keys. This is
-impossible for a man in the middle because neither private key is shared.
+We should use signing to verify that the messages were from teh correct sender but lol
+(they can't spy but they can inject >:( )
 """
 
 # this is basically overkill, but we need > 2048 for the very first message and it's probably ok
@@ -121,12 +118,10 @@ class Channel:
     # inner is encrypt with your pub, decrypt with my priv (so mitm can't listen)
     # outer is encrypt with my pri, decrypt with your pub (so mitm can't speak)
     def encrypt(self, message):
-        enc = encrypt(message, self.server_public_key)
-        return encrypt(enc, self.private_key)
+        return encrypt(message, self.server_public_key)
 
     def decrypt(self, encrypted_message):
-        dec = decrypt(encrypted_message, self.private_key)
-        return decrypt(dec, self.server_public_key)
+        return ecrypt(encrypted_message, self.private_key)
 
     # connects to the server and does the key exchange
     def connect(self):
@@ -282,25 +277,16 @@ class Master:
     # inner is encrypt with your pub, decrypt with my priv (so mitm can't listen)
     # outer is encrypt with my pri, decrypt with your pub (so mitm can't speak)
     def encrypt(self, message, address):
-        player_public_key = self.address_info[address]['pub']
-
-        enc = encrypt(message, player_public_key)
-        enc = encrypt(enc, self.private_key)
-        return enc
+        return enc = encrypt(message, self.address_info[address]['pub'])
 
     def decrypt(self, encrypted_message, address):
-        player_public_key = self.address_info[address]['pub']
-
-        dec = decrypt(encrypted_message, self.private_key)
-        dec = decrypt(dec, player_public_key)
-        return dec
+        return decrypt(encrypted_message, self.private_key)
     
-    def send_state(self, serialized_game_json):
-        data = game_json.encode('utf-8')
-        data = self.encrypt(data)
-
+    def send_state(self, data):
+        # data is a bytes type
         for address, info in self.address_info.items():
-            self.address_info[address]['connection'].send(data)
+            send_data = self.encrypt(data, address)
+            self.address_info[address]['connection'].send(send_data)
     
     # you can use recvfrom or like me you can just use the connection with each player
     def listen(self):
