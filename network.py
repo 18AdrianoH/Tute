@@ -166,7 +166,7 @@ class Channel:
         for data in datas:
             enc = self.encrypt(data.encode('utf-8'))
             try:
-                print('sending ', enc)
+                #print('sending ', enc)
                 self.socket.send(enc)
             except socket.error as err:
                 raise err
@@ -177,7 +177,7 @@ class Channel:
         message = self.socket.recv(MESSAGE_SIZE)
         #    print(message)
         message = self.decrypt(message).decode('utf-8')
-        print(message)
+        #print(message)
         #messages.append((info['id'], message))
         return message
 
@@ -288,7 +288,7 @@ class Master:
         #return decrypt(encrypted_message, self.private_key)
     
     def send_state(self, data):
-        assert len(data) < len(self.key), len(data)
+        #assert len(data) < len(self.key), len(data)
         # data is a bytes type
         for address, info in self.address_info.items():
             send_data = self.encrypt(data, address)

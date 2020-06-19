@@ -19,29 +19,29 @@ def main():
     player_id = input()
 
     net = Channel(server_ip, server_port, player_id)
-    #gui = Interface() #TODO we'll use this bad boy later
+    gui = Interface() 
 
     running = True
     while running:
         # see what the game state is and update our look
         game_state = net.listen()
-        print("...")
-        print(game_state)
+        #print("...")
+        #print(game_state)
         #gui.update(game_state)
         #gui.draw()
 
         # now get user actions
-        #gui.execute() # execute events and store messages in internal structures
-        net.send(['CYCLE'])
-        #requests = gui.requests() # query message structures to see what requests users have made
-        #for request in requests:
+        gui.execute() # execute events and store messages in internal structures
+        #net.send(['CYCLE'])
+        requests = gui.requests() # query message structures to see what requests users have made
+        for request in requests:
         #    # if you quit you'd like to perhaps be able to reconnect...
         #    # also we'll let people manually quit
-        #    if request == 'QUIT':
-        #        running = False
-        #        pygame.quit() # not sure if your pygame stuff is gonna work properly
-        #    else:
-        #        net.send(request)
+            if request == 'QUIT':
+                running = False
+                pygame.quit() # not sure if your pygame stuff is gonna work properly
+            else:
+                net.send(request)
 
 if __name__ == "__main__":
     main()
