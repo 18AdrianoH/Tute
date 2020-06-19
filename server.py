@@ -42,18 +42,16 @@ class Server:
         print('playing')
         while self.running:
             print('.')
+            # listen will block on the other end if we need the state to change >:( lul
+            self.master.send_state(serialize(self.game)) # update players
+            print('sent updated state')
             #state_changed = False
-            requests = self.master.listen()
+            requests = self.master.listen() # note how this comes AFTER we send state ... they were deadlocked
             print('read requests')
 
             for request in requests:
                 state_changed = self.process_client_message(request[0], request[1]) 
-            
-            # someone did something meaningful
-            #if state_changed:
-            # listen will block on the other end if we need the state to change >:( lul
-            self.master.send_state(serialize(self.game)) # update players
-            print('sent updated state')
+
         print('done playing')
         return
     

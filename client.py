@@ -32,7 +32,7 @@ def main():
 
         # now get user actions
         #gui.execute() # execute events and store messages in internal structures
-        net.send('CYCLE')
+        net.send(['CYCLE'])
         #requests = gui.requests() # query message structures to see what requests users have made
         #for request in requests:
         #    # if you quit you'd like to perhaps be able to reconnect...

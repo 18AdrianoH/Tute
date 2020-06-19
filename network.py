@@ -168,15 +168,19 @@ class Channel:
         for data in datas:
             enc = self.encrypt(data.encode('utf-8'))
             try:
+                print('sending ', enc)
                 self.socket.send(enc)
             except socket.error as err:
                 raise err
 
     def listen(self):
+        #messages = []
+        #for address, info in self.address_info.items():
         message = self.socket.recv(MESSAGE_SIZE)
-        print(message)
+        #    print(message)
         message = self.decrypt(message).decode('utf-8')
         print(message)
+        #messages.append((info['id'], message))
         return message
 
 # for the future this has to be explicitely event driven, it's too hard to think of it otherwise
@@ -303,7 +307,10 @@ class Master:
         # a list of (player_id, message)
         messages_recieved = []
         for address, info in self.address_info.items():
+            print('listening to ', address)
             data = self.address_info[address]['connection'].recv(MESSAGE_SIZE)
-            data = self.decrypt(data).decode('utf-8') # it's bits
-            messages_recieved.append((self.address_info[address]['id'], data))
+            if len(data) > 0:
+                print('recieved ', data)
+                data = self.decrypt(data, address).decode('utf-8') # it's bits
+                messages_recieved.append((self.address_info[address]['id'], data))
         return messages_recieved
