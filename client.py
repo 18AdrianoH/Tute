@@ -30,13 +30,15 @@ def main():
 
         if gui == None:
             gui = Interface(player_id, game_state)
+        else:
+            gui.update(game_state)
         #print("...")
         #print(game_state)
         #gui.update(game_state)
         #gui.draw()
 
         # now get user actions
-        gui.execute() # execute events and store messages in internal structures
+        gui.execute_actions() # execute events and store messages in internal structures
         #net.send(['CYCLE'])
         requests = gui.requests() # query message structures to see what requests users have made
         for request in requests:
@@ -47,6 +49,7 @@ def main():
                 pygame.quit() # not sure if your pygame stuff is gonna work properly
             else:
                 net.send(request)
+        gui.draw()
 
 if __name__ == "__main__":
     main()

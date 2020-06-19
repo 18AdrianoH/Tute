@@ -34,6 +34,9 @@ import pygame
     | | | | | | | | | | | |  |__|
 """
 
+SCREEN_WIDTH = 1600
+SCREEN_HEIGHT = 900
+
 COLOR_WHITE = (255, 255, 255)
 CARD_HEIGHT_TO_WIDTH_RATIO = 279.0/201.0 # this is width/height
 CARD_WIDTHS_PER_SCREEN = 12
@@ -284,7 +287,7 @@ class Sprites:
         self.center_sprites = []
 
         index = 0
-        while player_order[bot_index] != player_id:
+        while player_order[index] != player_id:
             index += 1
         
         for i in range(4):
@@ -321,7 +324,7 @@ class Sprites:
     def update(self, game_state):
         for player_sprites in self.player_sprites:
             self.player_sprites.update(
-                game_state['player cards'][player_sprites.player_id],
+                game_state['players cards'][player_sprites.player_id],
                 game_state['won cards'][player_sprites.player_id], 
                 game_state['revealed cards'], game_state['revealed won cards']
                 )
@@ -353,29 +356,36 @@ class Interface:
         self.game_state = game_json # what the game looks like right now
         self.requests = [] # queue of requests for the server (we append, client pops)
 
-        self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        self.window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption('Tute Game Client Interface')
 
-        self.screen_width, self.screen_height = pygame.display.get_surface().get_size()
-        self.sprites = Sprites(
-            self.game_state['player cards'],
-            self.game_state['player order'], 
-            player_id, 
-            self.screen_width, 
-            self.screen_height
-            ) # sprites to show for this person
+        self.screen_width, self.screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
+        self.sprites = None
 
         self.action_state = 'WAITING'
 
     ########## Key Graphics Functionality ##########
     def update(self, game_json):
         self.game_state = game_json
+
+        if self.spites is None and game_json['state'] != 'WAITING':
+            # make sure spirites exist lmao
+            self.sprites = Sprites(
+                self.game_state['players cards'],
+                self.game_state['player order'], 
+                player_id, 
+                self.screen_width, 
+                self.screen_height
+            ) # sprites to show for this person
         self.sprites.update(self.game_state)
     
     def draw(self, color=COLOR_WHITE):
         self.window.fill(color)
-        self.sprites.display(self.window)
-        # display center cards
+
+        if not self.sprites is None:
+            self.sprites.display(self.window)
+            # display center cards
+        
         pygame.display.update()
     
     ########## Key Action Functionality Below ##########
@@ -392,7 +402,7 @@ class Interface:
     # this will return the next state to go to in actions
     # and any important data in a tuple (state, data)
     # will return None if there is no action need be taken
-    def get_action(events):
+    def get_action(self, events):
         for event in events:
             if event.type == pygame.QUIT or event.type == pygame.KEYUP and event.key == K_q:
                 return ('QUIT', )
@@ -431,7 +441,7 @@ class Interface:
 
     def execute_actions(self):
         # this implementation insures that one event happens per execute cycle
-        actions = get_action(pygame.event.get())
+        actions = self.get_action(pygame.event.get())
 
         if actions is None:
             return # do nothing
