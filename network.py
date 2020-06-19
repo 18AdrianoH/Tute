@@ -121,7 +121,7 @@ class Channel:
         return encrypt(message, self.server_public_key)
 
     def decrypt(self, encrypted_message):
-        return ecrypt(encrypted_message, self.private_key)
+        return decrypt(encrypted_message, self.private_key)
 
     # connects to the server and does the key exchange
     def connect(self):
@@ -277,7 +277,7 @@ class Master:
     # inner is encrypt with your pub, decrypt with my priv (so mitm can't listen)
     # outer is encrypt with my pri, decrypt with your pub (so mitm can't speak)
     def encrypt(self, message, address):
-        return enc = encrypt(message, self.address_info[address]['pub'])
+        return encrypt(message, self.address_info[address]['pub'])
 
     def decrypt(self, encrypted_message, address):
         return decrypt(encrypted_message, self.private_key)
