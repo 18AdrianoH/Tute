@@ -21,35 +21,34 @@ CARD_VALUE = {'A' : 11,'3' : 10,'R' : 4,'C' : 3,'S' : 2,'9' : 0, '8' : 0, '7' : 
 
 ########## Serialization code ##########
 
+def default_game_state():
+    game_dict = {}
+    game_dict['state'] = 'WAITING'
+    return game_dict
+
 # return a dict representation of a tute game
 # only serializes what will be necessary for users
 # does not copy but instead uses aliasing (because json dumps doesn't have effects)
 def to_dict(game):
+    if game.state == 'WAITING':
+        return default_game_state()
+    # ELSE
     game_dict = {}
     # player whose turn it is (the one to play now)
     game_dict['state'] = game.state
 
-    if game.state == 'WAITING':
-        game_dict['game suit'] = None
-        game_dict['to play'] = None
-        game_dict['player order'] = None
-        game_dict['center'] = None
-        game_dict['players cards'] = None
-        game_dict['won cards'] = None
-        game_dict['revealed cards'] = None
-        game_dict['revealed won cards'] = None
-    else:
-        game_dict['game suit'] = game.game_suit
+    # a lot of these will be none if the game just started
+    game_dict['game suit'] = game.game_suit
 
-        game_dict['to play'] = game.get_turn_player()
-        game_dict['player order'] = game.player_order
-        game_dict['center'] = game.center # be careful with None -> 'null' but decode should be ok
+    game_dict['to play'] = game.get_turn_player()
+    game_dict['player order'] = game.player_order
+    game_dict['center'] = game.center # be careful with None -> 'null' but decode should be ok
 
-        game_dict['players cards'] = game.player_cards
-        game_dict['won cards'] = game.player_won_cards
+    game_dict['players cards'] = game.player_cards
+    game_dict['won cards'] = game.player_won_cards
 
-        game_dict['revealed cards'] = game.player_cards_state
-        game_dict['revealed won cards'] = game.player_won_cards_state
+    game_dict['revealed cards'] = game.player_cards_state
+    game_dict['revealed won cards'] = game.player_won_cards_state
 
     return game_dict
 # serialize a game dict into bits to be sent
@@ -105,6 +104,7 @@ class Tute:
     # Prepare the game after we are waiting for players and want to begin
     # Called after we have all four players
     def init_game(self):
+        print('initializing game')
         # initialize random conditions
         self.game_suit = random.choice(['E', 'C', 'O', 'B'])
         # self.round_suit remains None until someone places a card
@@ -137,6 +137,7 @@ class Tute:
     
     # this should only be called when 
     def increment_state(self):
+        print('trying to increment state')
         if self.state == 'WAITING':
             if len(self.player_order) == 4:
                 self.init_game()
@@ -220,9 +221,10 @@ class Tute:
     def add_player(self, player_id):
         if self.state == 'WAITING':
             if len(self.player_order) >= 4:
-                raise InvalidAction('Already have four players.')
+                print('cannot add since >=4 players (' + str(len(self.player_order)) + ')')
+                return
             elif player_id in self.player_order:
-                raise InvalidAction('Player already joined.')
+                print('two players have the same id')
             else:
                 self.player_order.append(player_id)
                 self.player_points[player_id] = 0

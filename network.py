@@ -162,14 +162,12 @@ class Channel:
     def quit(self):
         self.socket.close()
     
-    def send(self, datas):
-        for data in datas:
-            enc = self.encrypt(data.encode('utf-8'))
-            try:
-                #print('sending ', enc)
-                self.socket.send(enc)
-            except socket.error as err:
-                raise err
+    def send(self, data):
+        try:
+            print('channel sending ', data)
+            self.socket.send(data.encode('utf-8'))
+        except socket.error as err:
+            raise err
 
     def listen(self):
         #messages = []
@@ -299,10 +297,10 @@ class Master:
         # a list of (player_id, message)
         messages_recieved = []
         for address, info in self.address_info.items():
-            print('listening to ', address)
+            print('listening to ', address, info['id'])
             data = self.address_info[address]['connection'].recv(MESSAGE_SIZE)
             if len(data) > 0:
-                #print('recieved ', data)
+                print('master recieved ', data)
                 data = self.decrypt(data, address).decode('utf-8') # it's bits
                 messages_recieved.append((self.address_info[address]['id'], data))
         return messages_recieved

@@ -7,6 +7,7 @@ from tute import Tute # our game lol
 from tute import serialize # serializes the Tute game
 
 THREAD_TIMEOUT = 3.0
+REQUESTS = []
 
 # server is the executor of our game
 class Server:
@@ -41,20 +42,33 @@ class Server:
         #self.master.socket.close()
         #loop_thread.join(THREAD_TIMEOUT) # doesn't work because it's waiting for a lock
 
+    def listen(self):
+        global REQUESTS
+        while True:
+            # careful with deadlocks
+            for request in self.master.listen():
+                REQUESTS.append(request)
+                if request[1] == 'CYCLE':
+                    print('recieved cycle request in listen, len of unfulfilled is now ', len(REQUESTS))
 
     def play(self):
+        global REQUESTS
+
         print('playing')
+        listener = threading.Thread(target=self.listen)
+        listener.start()
+
         while self.running:
             print('.')
             # listen will block on the other end if we need the state to change >:( lul
             self.master.send_state(serialize(self.game)) # update players
             print('sent updated state')
             #state_changed = False
-            requests = self.master.listen() # note how this comes AFTER we send state ... they were deadlocked
             print('read requests')
 
-            for request in requests:
+            for request in REQUESTS:
                 state_changed = self.process_client_message(request[0], request[1]) 
+            REQUESTS = []
 
         print('done playing')
         return

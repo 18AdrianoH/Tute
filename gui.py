@@ -351,13 +351,15 @@ class Sprites:
 class Interface:
     def __init__(self, player_id, game_json):
         # constants pertaining to our files and stuff
+        print('initializing Interface')
 
         self.player = player_id # who this interface is for
         self.game_state = game_json # what the game looks like right now
-        self.requests = [] # queue of requests for the server (we append, client pops)
+        self.request = None # latest request
 
         self.window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption('Tute Game Client Interface')
+        print('Initialized... now waiting for state change to add sprites')
 
         self.screen_width, self.screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
         self.sprites = None
@@ -368,7 +370,7 @@ class Interface:
     def update(self, game_json):
         self.game_state = game_json
 
-        if self.spites is None and game_json['state'] != 'WAITING':
+        if self.sprites is None and game_json['state'] != 'WAITING':
             # make sure spirites exist lmao
             self.sprites = Sprites(
                 self.game_state['players cards'],
@@ -377,7 +379,8 @@ class Interface:
                 self.screen_width, 
                 self.screen_height
             ) # sprites to show for this person
-        self.sprites.update(self.game_state)
+        if not self.sprites is None:
+            self.sprites.update(self.game_state)
     
     def draw(self, color=COLOR_WHITE):
         self.window.fill(color)
@@ -404,13 +407,14 @@ class Interface:
     # will return None if there is no action need be taken
     def get_action(self, events):
         for event in events:
-            if event.type == pygame.QUIT or event.type == pygame.KEYUP and event.key == K_q:
-                return ('QUIT', )
+            if event.type == pygame.QUIT or event.type == pygame.KEYUP and event.key == pygame.K_q:
+                return ('QUIT', None)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # left mid right scrollup scrolldown
-                left, _, right, _, _ = pygame.mouse.get_pressed()
+                left, _, right = pygame.mouse.get_pressed()
                 if self.action_state == 'WAITING':
                     pos = pygame.mouse.get_pos()
+                    print('clicked at ', str(pos))
                     if left and right:
                         # can't do both
                         return None
@@ -423,6 +427,7 @@ class Interface:
                     return None
             elif event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
+                print('let go at ', str(pos))
                 if self.action_state == 'PLAY-SELECT':
                     # pos technically not necessary since we got that before
                     return ('PLAY', pos)
@@ -432,9 +437,10 @@ class Interface:
                     # no change of state
                     return None
             # since we only have one spacebar it's fine to just do keyup
-            elif event.type == pygame.KEYUP and event.key == K_SPACE:
+            elif event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
+                print('recieved cycle request')
                 if self.action_state == 'WAITING':
-                    return ('CYCLE', )
+                    return ('CYCLE', None)
                 else:
                     return None
         return None # no action taken
@@ -462,22 +468,24 @@ class Interface:
     
     # these are the functions that figure out 
     def execute_quit(self):
-        requests.append('QUIT')
+        self.request = 'QUIT'
         state = 'QUIT'
+        pygame.quit()
 
     def execute_reveal(self, coords):
         play_string = 'REVEAL' + self.sprites.card_clicked(coords)
-        requests.append(play_string)
+        self.request = play_string
         self.state = 'WAITING'
 
     def execute_play(self, coords):
         # card_clicked returns the string rep of the card
         play_string = 'PLAY' + self.sprites.card_clicked(coords)
-        requests.append(play_string)
+        self.request = play_string
         self.state = 'WAITING'
 
     # lol this is a simple one 
     def execute_cycle(self):
-        requests.append('CYCLE')
+        print('pubbed cycle request')
+        self.request = 'CYCLE'
         self.state = 'WAITING'
 ## do note that a client reads from requests
