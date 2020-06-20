@@ -21,19 +21,6 @@ def gen_keys():
         )
     return private_key.public_key(), private_key
 
-# return the plaintext of a comma seperated message iff it's verified
-# input should be b'<message>,<signature>'
-def read(message, signature, spub, pri):
-    dec = decrypt(message, pri)
-    verify(dec, signature, spub)
-    return dec
-
-# return b'<encrypted bytes>,<signature>'
-def write(bytes, spub, pri):
-    enc = encrypt(bytes, spub)
-    signature = sign(bytes, pri)
-    return enc + b',' + signature
-
 # sign with a private key
 def sign(message, key):
     signature = key.sign(

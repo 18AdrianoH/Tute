@@ -21,21 +21,17 @@ CARD_VALUE = {'A' : 11,'3' : 10,'R' : 4,'C' : 3,'S' : 2,'9' : 0, '8' : 0, '7' : 
 
 ########## Serialization code ##########
 
-def default_game_state():
-    game_dict = {}
-    game_dict['state'] = 'WAITING'
-    return game_dict
-
 # return a dict representation of a tute game
 # only serializes what will be necessary for users
 # does not copy but instead uses aliasing (because json dumps doesn't have effects)
 def to_dict(game):
-    if game.state == 'WAITING':
-        return default_game_state()
-    # ELSE
     game_dict = {}
     # player whose turn it is (the one to play now)
     game_dict['state'] = game.state
+
+    if game.state == 'WAITING':
+        return game_dict
+    # else
 
     # a lot of these will be none if the game just started
     game_dict['game suit'] = game.game_suit

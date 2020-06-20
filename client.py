@@ -1,56 +1,63 @@
 import asyncio
 
-from crypto import gen_keys()
-from crypto import read
-from crypto import write
+from crypto import gen_keys
+from crypto import decrypt
+from crypto import encrypt
 from crypto import deserialize_key
 from crypto import serialize_key
 
 from tute import deserialize
 
+READ_LEN = 1 << 12 # safe number
+
 # return the public key deserialized from the server
-async def handshake(id):
+async def handshake(id, host, port, pub):
     reader, writer = await asyncio.open_connection(
         host, 
         port
         )
     
-    pub = serialize_key(pub)
-    message = b'CONNECT,' + pub + b',' + id.encode('utf-8')
+    pem = serialize_key(pub)
+    message = b'CONNECT,' + pem + b',' + id.encode('utf-8')
     writer.write(message)
 
-
-    response = await reader.read() # will read all bytes sent
-    if response[:9] == 'CONNECTED':
+    response = await reader.read(READ_LEN) # will read all bytes sent
+    
+    if response[:9] == b'CONNECTED':
         # they return 'CONNECTED,<pem>'
         return deserialize_key(response.split(b',')[1])
     # else will return None
 
 # given the server's public key, spub, ask for the state of the game
-async def get(spub):
+async def get(spub, pri, host, port, id):
     reader, writer = await asyncio.open_connection(
         host, 
         port
         )
+    
+    plain = b'GET,' + id.encode('utf-8')
+    enc = encrypt(plain, spub)
+    writer.write(enc)
 
-    writer.write(write(b'GET', spub, pri))
-
-    response = await reader.read()
-    message, signature = response.split(b',')
+    response = await reader.read(READ_LEN)
     # recieves a json representation of the game state
-    state = deserialize(read(message, signature, spub, pri))
+    spain = decrypt(response, pri)
+    state = deserialize(spain)
 
     writer.close()
     return state
 
 # sends a message, but does not inquire into state
-async def send(message, spub):
+async def send(message, spub, host, port, id):
     reader, writer = await asyncio.open_connection(
         host, 
         port
         )
+    
+    plain = message.encode('utf-8') + b',' + id.encode('utf-8')
+    enc = encrypt(plain, spub)
 
-    writer.write(write(message.encode('utf-8'), spub, pri))
+    writer.write(enc)
     writer.close()
 
 async def run():
@@ -62,9 +69,9 @@ async def run():
     id = input() # this is blocking but that is fine
 
     print('handshake...')
-    spub = await handshake()
+    spub = await handshake(id, host, port, pub)
     print('handshake done, getting state...')
-    state = await get(spub)
+    state = await get(spub, pri, host, port, id)
     print('done, running...')
 
     running = True
@@ -75,10 +82,10 @@ async def run():
         if query == 'q':
             running = False
         elif query == 'g':
-            state = await get(spub)
+            state = await get(spub, pri, host, port, id)
             print(state)
         else:
-            await send(query, spub)
+            await send(query, spub, host, port, id)
     
     print('finished')
 
