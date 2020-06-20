@@ -6,8 +6,8 @@ import json
 SUITS = ('B', 'E', 'C', 'O')
 VALUES = ('A', 'R', 'C', 'S', '9', '8', '7', '6', '5', '4', '3', '2')
 
-CARD_ORDER = {'A' : 11,'3' : 10,'R' : 9,'C' : 8,'S' : 7,'9' : 6, '8' : 5, '7' : 4, '6' : 3, '5' : 2, '4' : 1, '3' : 0}
-CARD_VALUE = {'A' : 11,'3' : 10,'R' : 4,'C' : 3,'S' : 2,'9' : 0, '8' : 0, '7' : 0, '6' : 0, '5' : 0, '4' : 0, '3' : 0}
+CARD_ORDER = {'A' : 11,'3' : 10,'R' : 9,'C' : 8,'S' : 7,'9' : 6, '8' : 5, '7' : 4, '6' : 3, '5' : 2, '4' : 1, '2' : 0}
+CARD_VALUE = {'A' : 11,'3' : 10,'R' : 4,'C' : 3,'S' : 2,'9' : 0, '8' : 0, '7' : 0, '6' : 0, '5' : 0, '4' : 0, '2' : 0}
 
 # There are three basic states:
 # WAITING (waiting for four players to connect)
@@ -77,17 +77,14 @@ class Tute:
         self.player_order = []
         self.center = [None, None, None, None]
 
-        self.player_points = {}
+        #self.player_points = {}
         self.player_cards = {}
         self.player_cards_state = {} # a card is either True or False for revealed or hidden
         self.player_won_cards = {}
         self.player_won_cards_state = {}
 
         # used in rounds to keep track of who played what
-        self.cards_played_by = None
-
-        self.round_finised = None
-        self.turn_finished = None
+        self.cards_played_by = {}
     
     ########## Helper functionality ##########
 
@@ -100,6 +97,13 @@ class Tute:
     # Prepare the game after we are waiting for players and want to begin
     # Called after we have all four players
     def init_game(self):
+        # ugh
+        #self.player_points = {}
+        self.player_cards = {}
+        self.player_cards_state = {} # a card is either True or False for revealed or hidden
+        self.player_won_cards = {}
+        self.player_won_cards_state = {}
+
         print('initializing game')
         # initialize random conditions
         self.game_suit = random.choice(['E', 'C', 'O', 'B'])
@@ -126,8 +130,6 @@ class Tute:
         # initialize temporal data
         self.turn = 0
         self.round_num = 0 # there will be 12 rounds total
-        self.round_finised = False
-        self.turn_finished = False
 
         self.cards_played_by = {}
     
@@ -141,54 +143,10 @@ class Tute:
 
                 print('Starting Game')
             else:
-                raise InvalidAction('Need four players, have {}'.format(len(self.player_order)))
+                print('Need four players, have {}'.format(len(self.player_order)))
         # if we are still in the same round
         elif self.state == 'ROUNDS':
-            if self.round_num < 12:
-                if self.round_finised:
-                    # get who won
-                    winning_card = get_winning_card(self.center, self.round_suit, self.game_suit)
-                    winning_player = cards_played_by[winning_card]
-                    
-                    # get the points for the winner and add the cards to his/her pile
-                    total_points = 0
-                    for card in self.center:
-                        total_points += CARD_VALUE[card]
-                        self.player_won_cards[winning_player].append(card)
-                    self.player_points[winning_player] += total_points
-
-                    # new round new cards
-                    self.center = [None, None, None, None]
-
-                    # re-order round player order to start with winner
-                    winning_player_index = 0
-                    for index in range(4):
-                        if self.player_order[index] == winning_player:
-                            winning_player_index = index
-                            break
-                    self.player_order = self.player_order[winning_player_index:] + self.player_order[:winning_player_index]
-
-                    # next round
-                    self.round_num += 1
-                    self.turn = 0
-
-                    self.round_finished = False
-                    self.turn_finished = False
-
-                elif self.turn_finished:
-                    print('incrementing turn')
-                    # next turn
-                    self.turn += 1
-                    self.turn_finished = False
-
-                else:
-                    raise InvalidAction('Need to finish turn or round')
-            else:
-                self.state = 'TERMINAL'
-
-                print('Game over')
-                for player in players:
-                    print('{} got {} points before 40\'s, 20\'s and Tute'.format(player, self.player_points[player]))
+            pass
         # if we are going to a new round
         elif self.state == 'TERMINAL':
             # back to the beginning
@@ -197,7 +155,7 @@ class Tute:
 
             print('Restarting Game')
         else:
-            raise InvalidState('Unknown conditions, not in WAITING, ROUNDS, or TERMINAL states')
+            print('Unknown conditions, not in WAITING, ROUNDS, or TERMINAL states')
     
     ########## Game action transitions taken by players #########
     def restart_game(self):
@@ -212,7 +170,7 @@ class Tute:
         if self.state == 'TERMINAL':
             self.increment_state()
         else:
-            raise InvalidAction('Cannot play again until game is over')
+            print('Cannot play again until game is over')
     
     # Add a player if we are in the WAITING state
     def add_player(self, player_id):
@@ -224,7 +182,7 @@ class Tute:
                 print('two players have the same id')
             else:
                 self.player_order.append(player_id)
-                self.player_points[player_id] = 0
+                #self.player_points[player_id] = 0
                 self.player_cards[player_id] = None # init when we start the game
                 self.player_cards_state[player_id] = None #init when we start the game
                 self.player_won_cards[player_id] = None # init when we start the game
@@ -233,36 +191,63 @@ class Tute:
     
     # Plays a card that player_id (player) has
     def play_card(self, player_id, card):
+        if self.round_num >= 12:
+            self.state = 'TERMINAL'
+            print('game over')
+
         if card in self.player_cards[player_id] and player_id in self.player_order:
             if self.player_order[self.turn] == player_id:
                 if self.center[self.turn] != None:
-                    raise InvalidState('Somehow this turn already happened')
+                    print('Somehow this turn already happened')
                 else:
                     self.center[self.turn] = card
 
                     self.player_cards[player_id].remove(card)
-                    self.player_cards_state[player_id].remove(card)
+                    del self.player_cards_state[player_id][card]
+                    self.cards_played_by[card] = player_id
 
                     if self.round_suit is None:
                         self.round_suit = card[-1] # last element is always suit
-
-                    self.turn_finished = True
-                    if self.turn == 3:
-                        self.round_finished = True
                     
-                    self.increment_state() ## TODO assert there are no bugs here
+                    self.turn += 1
+
+                    # it's been filled
+                    if not None in self.center:
+                        self.turn = 0
+                        self.round_num += 1
+                        
+                        winning_card = get_winning_card(self.center, self.round_suit, self.game_suit)
+                        winning_player = self.cards_played_by[winning_card]
+                        self.cards_played_by = {}
+
+                        for won_card in self.center:
+                            #if CARD_VALUE[won_card] > 0 # we can do this in the gui to save space
+                            self.player_won_cards[player_id].append(won_card)
+                            self.player_won_cards_state[player_id][won_card] = False
+                        
+                        # new round new cards
+                        self.center = [None, None, None, None]
+
+                        # re-order round player order to start with winner
+                        winning_player_index = 0
+                        for index in range(4):
+                            if self.player_order[index] == winning_player:
+                                winning_player_index = index
+                                break
+                        self.player_order = self.player_order[winning_player_index:] + self.player_order[:winning_player_index]
+
+                        # if points don't work it's ok we don't need them that much
+                        # get the points for the winner and add the cards to his/her pile
+                        # total_points = 0
+                        # for card in self.center:
+                        #     total_points += CARD_VALUE[card][0]
+                        #     self.player_won_cards[winning_player].append(card)
+                        # self.player_points[winning_player] += total_points
+                        
             else:
-                raise InvalidAction('It\s not {}\'s turn'.format(player_id))
+                print('It\s not {}\'s turn'.format(player_id))
         else:
-            raise InvalidAction('Player \'{}\' nonexistent or card {} not held'.format(player_id, card))
-
-        # add card to the center
-        self.center[self.center_index] = card_str
-        self.center_index += 1
-
-        # if it's the first card played it determines the suit for the round
-        if self.round_suit == None:
-            self.round_suit = card_str[2] # 3rd thing is the suit
+            print('Player \'{}\' nonexistent or card {} not held'.format(player_id, card))
     
     # Reveal a card the player with player_id has (precondition that he/she has it)
     # this is a toggle method so it will hide if revealed
@@ -270,7 +255,7 @@ class Tute:
         if card in self.player_cards[player_id]:
             self.player_cards_state[player_id][card] = not self.player_cards_state[player_id][card]
         else:
-            raise InvalidAction('{} does not have card {} or doesn\'t exist'.format(player_id, card))
+            print('{} does not have card {} or doesn\'t exist'.format(player_id, card))
     
     # reveal a card that the player with player_id has already won (because graphics differ)
     # this is a toggle method so it will hide if revealed
@@ -278,7 +263,7 @@ class Tute:
         if card in self.player_won_cards[player_id]:
             self.player_won_cards_state[player_id][card] = not self.player_won_cards_state[player_id][card]
         else:
-            raise InvalidAction('{} has not won card {} or doesn\'t exist'.format(player_id, card))
+            print('{} has not won card {} or doesn\'t exist'.format(player_id, card))
 
 ########## Below are helpful methods used above ##########
 
@@ -287,15 +272,15 @@ class Tute:
 def card_beats(challenger, defender, rs, gs):
     v1, s1 = challenger.split('_')
     v2, s2 = defender.split('_')
-    if f1 == f2:
+    if s1 == s2:
         return challenger if CARD_VALUE[v1] > CARD_VALUE[v2] else defender
-    elif f1 == gs and f2 != gs:
+    elif s1 == gs and s2 != gs:
         return challenger
-    elif  f2 == gs and  f1 != gs:
+    elif  s2 == gs and  s1 != gs:
         return defender
-    elif  f1 == rs and  f2 !=rs:
+    elif  s1 == rs and  s2 !=rs:
         return challenger
-    elif  f2 == rs and  f1 != rs:
+    elif  s2 == rs and  s1 != rs:
         return defender
     else:
         # understand that this won't happen in get_winning_card
@@ -305,13 +290,12 @@ def card_beats(challenger, defender, rs, gs):
 def get_winning_card(cards_list, rs, gs):
     winning_card = cards_list[0]
     for card in cards_list:
-        if card_beats(card, winning_card, rs, gs):
-            winning_card = card
+        winning_card = card_beats(card, winning_card, rs, gs)
     return winning_card
 
 # Card generation code
 def gen_cards():
-    cards = [suit + '_' + value for suit in SUITS for value in VALUES]
+    cards = [value + '_' + suit for value in VALUES for suit in SUITS]
     random.shuffle(cards)
     return cards
 # Card splitting will be helpful you'll see

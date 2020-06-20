@@ -142,7 +142,14 @@ async def run():
             running = False
         elif query == 'G':
             state = await get(spub, pri, host, port, id, symob)
-            print(state)
+            if (state['state'] == 'WAITING'):
+                print(state)
+            else:
+                print('to play', state['to play'])
+                print('order', state['player order'])
+                print('game suit', state['game suit'])
+                print(state['players cards'][id])
+                print(state['won cards'][id])
         else:
             await send(query, spub, pri, host, port, id, symob)
     
