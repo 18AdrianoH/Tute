@@ -1,69 +1,85 @@
-import json #LMAO
-from tute import deserialize, default_game_state
-from gui import Interface
-from network import Channel
-import threading
+import asyncio
 
-GAME_STATE = None
+from crypto import gen_keys()
+from crypto import read
+from crypto import write
+from crypto import deserialize_key
+from crypto import serialize_key
 
-def listening(gui, net):
-    global GAME_STATE
-    while True:
-        GAME_STATE = json.loads(net.listen())
+from tute import deserialize
 
-def main():
-    global GAME_STATE
+# return the public key deserialized from the server
+async def handshake(id):
+    reader, writer = await asyncio.open_connection(
+        host, 
+        port
+        )
+    
+    pub = serialize_key(pub)
+    message = b'CONNECT,' + pub + b',' + id.encode('utf-8')
+    writer.write(message)
 
-    # onboard the network parameters
-    print('Please enter the server\'s IP and port')
-    server_ip = '10.0.0.211'#input() # TODO
-    server_port = 5555#int(input())
-    print('Please enter your username')
-    player_id = input()
 
-    GAME_STATE = default_game_state()
-    #print(GAME_STATE)
+    response = await reader.read() # will read all bytes sent
+    if response[:9] == 'CONNECTED':
+        # they return 'CONNECTED,<pem>'
+        return deserialize_key(response.split(b',')[1])
+    # else will return None
 
-    net = Channel(server_ip, server_port, player_id)
-    gui = Interface(player_id, GAME_STATE)
+# given the server's public key, spub, ask for the state of the game
+async def get(spub):
+    reader, writer = await asyncio.open_connection(
+        host, 
+        port
+        )
 
-    listener = threading.Thread(target=listening,args=(gui,net))
-    listener.start()
+    writer.write(write(b'GET', spub, pri))
 
-    #action_boy = threading.Thread()
-    #action_boy.start()
+    response = await reader.read()
+    message, signature = response.split(b',')
+    # recieves a json representation of the game state
+    state = deserialize(read(message, signature, spub, pri))
+
+    writer.close()
+    return state
+
+# sends a message, but does not inquire into state
+async def send(message, spub):
+    reader, writer = await asyncio.open_connection(
+        host, 
+        port
+        )
+
+    writer.write(write(message.encode('utf-8'), spub, pri))
+    writer.close()
+
+async def run():
+    host = '10.0.0.211'
+    port = 5555
+    pub, pri = gen_keys()
+
+    print('starting... enter your id')
+    id = input() # this is blocking but that is fine
+
+    print('handshake...')
+    spub = await handshake()
+    print('handshake done, getting state...')
+    state = await get(spub)
+    print('done, running...')
 
     running = True
+    
     while running:
-        # see what the game state is and update our look
-
-        #print(GAME_STATE)
-        if 'to play' in GAME_STATE:
-            print('to play ', GAME_STATE['to play'])
+        print('enter query')
+        query = input()
+        if query == 'q':
+            running = False
+        elif query == 'g':
+            state = await get(spub)
         else:
-            print('waiting to play')
+            await send(query, spub)
+    
+    print('finished')
 
 
-        gui.update(GAME_STATE)
-        #print("...")
-        #print(game_state)
-        #gui.update(game_state)
-        #gui.draw()
-
-        # now get user actions
-        gui.execute_actions() # execute events and store messages in internal structures
-        #net.send(['CYCLE'])
-        request = gui.request
-        if request is not None:
-            if request == 'QUIT':
-                running = False
-                listener.join(1.0)
-            else:
-                if request == 'CYCLE':
-                    print('sending cycle request')
-                net.send(request)
-                gui.request = None
-        gui.draw()
-
-if __name__ == "__main__":
-    main()
+asyncio.run(run())
