@@ -145,6 +145,7 @@ async def run():
             if (state['state'] == 'WAITING'):
                 print(state)
             else:
+                print('center', state['center'])
                 print('to play', state['to play'])
                 print('order', state['player order'])
                 print('game suit', state['game suit'])
