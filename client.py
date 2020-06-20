@@ -76,6 +76,7 @@ async def run():
             running = False
         elif query == 'g':
             state = await get(spub)
+            print(state)
         else:
             await send(query, spub)
     
