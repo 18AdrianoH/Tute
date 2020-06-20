@@ -2,20 +2,31 @@ import asyncio
 from tute import Tute
 from tute import serialize
 
-from crypto import gen_keys
-from crypto import decrypt
-from crypto import encrypt
-from crypto import deserialize_key
-from crypto import serialize_key
+from crypto import gen_keys_asym
 
-host = '10.0.0.211'
-port = 5555
+# assymetric key functionality
+from crypto import decrypt_asym
+from crypto import encrypt_asym
+from crypto import verify
+from crypto import sign
+
+from crypto import encrypt_sym
+from crypto import decrypt_sym
+from crypto import sym_ob
+
+from crypto import ASYM_KEY_SIZE
+
+# symmetric key functionality
+from crypto import deserialize_key_asym
+from crypto import serialize_key_asym
+
 # necessary since -1 or empty will hang (wait until connection closed)
-READ_LEN = 1 << 12 # safe number
+READ_LEN = 1 << 12 # key size lmao
+# 256 length in bytes 
 
 game = Tute()
 peers = {}
-pub, pri = gen_keys()
+pub, pri = gen_keys_asym()
 
 async def handle(reader, writer):
     global READ_LEN
@@ -29,45 +40,118 @@ async def handle(reader, writer):
     data = await reader.read(READ_LEN)
     addr = writer.get_extra_info('peername')
 
-    print(f"Received {data!r} from {addr!r}")
+    print(f'Received {data!r} from {addr!r}')
 
     # handshake
     if len(data) >= 7 and data[:7] == b'CONNECT':
         print('processing CONNECT')
         _, addr_key, addr_id = data.split(b',')
 
-        peers[addr_id] = deserialize_key(addr_key)
+        id = addr_id.decode('utf-8')
 
-        response = b'CONNECTED,' + serialize_key(pub)
+        # when we make this use AES for future communcations, need this to be a nested dict
+        peers[id] = {}
+        peers[id]['rsa'] = deserialize_key_asym(addr_key)
+
+        response = b'CONNECTED,' + serialize_key_asym(pub)
         writer.write(response)
         await writer.drain()
+
+        game.add_player(id)
+        if len(game.player_order) == 4:
+            game.increment_state() # start the game!
+    
+        
     # else we'll only respond if they have a valid username and they've signed in a valid way
     else:
-        # plains = <message with commas maybe>,<id>
-        plain = decrypt(data, pri)
-        plains = plain.split(b',')
-        if plains[-1] in peers:
-            ppub = peers[plains[-1]]
+        # AES handshake (lmao this is the dumbest shit ever)
+        if b',,' in data and not b',,,,,,,,,,' in data:
+            # it's 4 commas for low probability
+            msg1, msg2 = data.split(b',,')
+            msg1 = decrypt_asym(msg1, pri)
+            msg2 = decrypt_asym(msg2, pri)
 
-            # get query
-            query_type = plains[0]
+            # magic numbers for the win
+            ln = 105
 
-            # get request
-            if query_type[:3] == b'GET':
-                print('processing GET')
+            print(msg1, msg2)
 
-                plain = serialize(game)
-                enc = encrypt(plain, ppub)
+            aes1, sig1, sym, id_bits = msg1.split(b',,')
+            aes2, sig2, _id_bits = msg2.split(b',,')
 
-                writer.write(enc)
-                await writer.drain()
-            # state change
+            if (aes1 == b'AES1' and aes2 == b'AES2' and id_bits == _id_bits):
+                print('looking ok...')
+                id = id_bits.decode('utf-8')
+                ppub = peers[id]['rsa']
+                verify(id_bits, sig1 + sig2, ppub)
+                # now that we know that it was sent by the correct person and they are honest...
+                peers[id]['aes'] = sym_ob(sym)
+                peers[id]['aes_spawn'] = sym # probably will never use this
+
+                response = encrypt_asym(b'RECIEVED,' + sym, ppub)
+                writer.write(response)
             else:
-                print(f"Message was of type {query_type} by {plains[-1]}")
+                print('looks like the ids or headers didn\'t match!')
+
+        else:
+            # plains = <message with commas maybe>,<sig>,<id>
+            _enc, name = data.split(b',,,,,,,,,,')
+            id_str = name.decode('utf-8')
+
+            plain = decrypt_sym(_enc, peers[id_str]['aes'])
+            plains = plain.split(b',,,,,,,,,,')
+
+            sig = plains[-1]
+
+            if id_str in peers:
+                ppub = peers[id_str]['rsa']
+                verify(name, sig, ppub)
+
+                # get query type
+                query_type = plains[0]
+
+                # get request
+                if query_type[:3] == b'GET':
+                    print('processing GET')
+
+                    plain = serialize(game) + b',,,,,,,,,,' + sign(name, pri)
+                    enc = encrypt_sym(plain, peers[id_str]['aes'])
+
+                    writer.write(enc)
+                    await writer.drain()
+                # state change
+                else:
+                    print(f'Message was of type {query_type} by {id_str}')
+                    print('telling game your request')
+
+                    if query_type == b'CYCLE':
+                        game.increment_state()
+                    elif query_type == b'REVEAL':
+                        card = plains[1].decode('utf-8')
+                        if card in game.player_cards[id_str]:
+                            game.reveal_card(id_str, card)
+                            print('revealed a card!')
+                        elif card in game.player_won_cards[id_str]:
+                            game.reveal_won_card(id_str, card)
+                            print('revealed a won card!')
+                    elif query_type == b'PLAY':
+                        card = plains[1].decode('utf-8')
+                        if card in game.player_cards[id_str]:
+                            game.play_card(id_str, card)
+                            print(f'{id_str} played {card}!')
+                    
+                    print(f'round num {game.round_num}')
+                    print(f'turn {game.turn}')
+                    #print(f' {}')
+                    #print(f' {}')
+                    #print(f' {}')
 
     writer.close()
 
 async def main():
+    host = '10.0.0.211'
+    port = 5555
+
     server = await asyncio.start_server(
         handle, host, port)
 

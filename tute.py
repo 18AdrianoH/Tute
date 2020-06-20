@@ -169,13 +169,14 @@ class Tute:
                     self.player_order = self.player_order[winning_player_index:] + self.player_order[:winning_player_index]
 
                     # next round
-                    self.round += 1
+                    self.round_num += 1
                     self.turn = 0
 
                     self.round_finished = False
                     self.turn_finished = False
 
                 elif self.turn_finished:
+                    print('incrementing turn')
                     # next turn
                     self.turn += 1
                     self.turn_finished = False
@@ -239,8 +240,8 @@ class Tute:
                 else:
                     self.center[self.turn] = card
 
-                    self.player_cards.remove(card)
-                    self.player_cards_state.remove(card)
+                    self.player_cards[player_id].remove(card)
+                    self.player_cards_state[player_id].remove(card)
 
                     if self.round_suit is None:
                         self.round_suit = card[-1] # last element is always suit
@@ -254,8 +255,6 @@ class Tute:
                 raise InvalidAction('It\s not {}\'s turn'.format(player_id))
         else:
             raise InvalidAction('Player \'{}\' nonexistent or card {} not held'.format(player_id, card))
-        
-        self.player_cards[player].remove(card_str)
 
         # add card to the center
         self.center[self.center_index] = card_str

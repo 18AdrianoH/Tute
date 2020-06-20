@@ -1,4 +1,2 @@
 # Tute
-Todo change from sockets (blocking) and fake threading to async with async sockets.
-
-This is a work in progress. First I want to get a CLI working for the game. Then I'll struggle with the gui.
+A simple Tute game using basic Python asyncio and vanilla stuff. Has a nice feature of semi-security. Packets are encrypted, but I wrote it in house. Obviously you'd use SSL in a professional environment, but I wanted to get a bit of a better understanding about how this all worked. Note that we also reuse the same keypair. BAD.
