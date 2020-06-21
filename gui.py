@@ -4,6 +4,9 @@
 
 import pygame
 
+from tute import SUITS
+from tute import VALUES
+
 # we will use hitboxes and mouse clicks
 # a left mouse click plays the card
 # a right mouse click reveals the card
@@ -44,6 +47,13 @@ CARD_DENSITY = 2 # 1/CARD_DENSITY is how much we show of each card
 INVERSE_CENTER_X = 2
 INVERSE_CENTER_Y = 2
 
+# you would literally not believe how much this speeds everything up
+# loading images (especially the back is a huge fucking bottleneck)
+BACK_IMAGE = pygame.image.load('./cartas-españolas/back.jpg')
+GET_IMAGE = {
+    val + '_' + st : pygame.image.load('./cartas-españolas/'+val+'_'+st+'.jpg') for val in VALUES for st in SUITS
+    }
+
 #################### Sprite Types and Graphics Helpers ####################
 # A dummy card sprite can have None as its 'card' or we can just put a placeholder
 # This card is also used for hitbox detection
@@ -70,14 +80,15 @@ class CardSprite:
         self.back_image = None
 
         # load image information
-        self.front_image = pygame.image.load('./cartas-españolas/'+self.value+'_'+self.suit+'.jpg')
+        self.front_image = GET_IMAGE[card]
         self.front_image = pygame.transform.scale(self.front_image, (self.width, self.height))
 
-        self.back_image = pygame.image.load('./cartas-españolas/back.jpg')
+        self.back_image = BACK_IMAGE
         self.back_image = pygame.transform.scale(self.back_image, (self.width, self.height))
 
         self.front_image = pygame.transform.rotate(self.front_image, self.rotation_front)
         self.back_image = pygame.transform.rotate(self.back_image, self.rotation_back)
+        #print('LOADED')
     
     # move it to a tuple for x and y
     def move(self, xy):
@@ -373,6 +384,7 @@ class Sprites:
                     False
                     )
             )
+            i += 1 # lmao I forgot this before
 
 #################### Orchestration for Graphics Below ####################
 
@@ -410,10 +422,10 @@ class Interface:
                 self.screen_height
             ) # sprites to show for this person
         if not self.sprites is None:
+            print('NOT NONE')
             self.sprites.update(self.game_state)
     
     def draw(self, color=COLOR_WHITE):
-        print('draw')
         self.window.fill(color)
 
         if not self.sprites is None:
@@ -468,7 +480,6 @@ class Interface:
                     return None
             # since we only have one spacebar it's fine to just do keyup
             elif event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
-                print('recieved cycle request')
                 if self.action_state == 'WAITING':
                     return ('CYCLE', None)
                 else:
@@ -523,3 +534,81 @@ class Interface:
         self.request = 'CYCLE'
         self.state = 'WAITING'
 ## do note that a client reads from requests
+
+if __name__ == '__main__':
+    print('demo')
+
+    # create our demo state
+    state_start = {'state' : 'WAITING'}
+    state_real = {
+        'state' : 'ROUNDS',
+        'to play' : 'demodude',
+        'player order': ['demodude', '1', '2' , '3'],
+        'center' : ['A_E', None, None, None],
+        'players cards' : {
+            'demodude' : ['A_E', 'A_B'], 
+            '1' : ['A_E', 'A_B'],
+            '2' : ['A_E', 'A_B'],
+            '3' : ['A_E', 'A_B'],
+        },
+        'won cards' : {
+            'demodude' : ['A_E'], 
+            '1' : ['A_E'],
+            '2' : ['A_E'],
+            '3' : ['A_E'],
+        } ,
+        'revealed cards' : {
+            'demodude' : {
+                'A_E' : False, 
+                'A_B' : False,
+                }, 
+            '1' : {
+                'A_E' : False, 
+                'A_B' : False,
+                }, 
+            '2' : {
+                'A_E' : False, 
+                'A_B' : False,
+                }, 
+            '3' : {
+                'A_E' : False, 
+                'A_B' : False,
+                }, 
+        },
+        'revealed won cards' : {
+            'demodude' : {
+                'A_E' : False, 
+                }, 
+            '1' : {
+                'A_E' : False, 
+                }, 
+            '2' : {
+                'A_E' : False, 
+                }, 
+            '3' : {
+                'A_E' : False, 
+                }, 
+        }
+    }
+
+    gui = Interface('demodude', state_start)
+    
+    running = True
+    it = 0
+    while running:
+        it += 1
+        print(it)
+        gui.execute_actions()
+
+        query = gui.request
+        gui.request = None # ready to take in a new query (don't repeat!)
+        print(query)
+        if query == 'QUIT':
+            running = False
+        
+        if it > 60:
+            gui.update(state_real)
+        else: # TODO right now it freezes on this state >:(
+            gui.update(state_start)
+        gui.draw()
+    print('finished')

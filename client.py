@@ -140,6 +140,8 @@ async def run():
     gui = Interface(id, state)
     
     while running:
+        gui.execute_actions()
+
         query = gui.request
         gui.request = None # ready to take in a new query (don't repeat!)
         if query == 'QUIT':
