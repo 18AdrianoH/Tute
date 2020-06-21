@@ -38,14 +38,14 @@ from tute import VALUES
     | | | | | | | | | | | |  |__|
 """
 
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+SCREEN_WIDTH = 1300
+SCREEN_HEIGHT = 800
 
 EPSILON = 10
 
 COLOR_WHITE = (255, 255, 255)
 CARD_HEIGHT_TO_WIDTH_RATIO = 279.0/201.0 # this is width/height
-CARD_WIDTHS_PER_SCREEN = 16
+CARD_WIDTHS_PER_SCREEN = 12
 CARD_DENSITY = 2 # 1/CARD_DENSITY is how much we show of each card
 INVERSE_CENTER_X = 2
 INVERSE_CENTER_Y = 2
@@ -359,9 +359,13 @@ class Sprites:
     # we only react to cards clicked if they are ours (we don't get to choose what to do with others' cards)
     def card_clicked(self, xy):
         x, y = xy
-        for card_sprite in self.bot_player_sprites.card_sprites:
-            if card_sprite.contains_point(x, y):
-                return card_sprite.card
+        cs = self.bot_player_sprites.card_sprites
+        # why go backwards? hitboxes. (this is the shittiest least mantainable crap ive ever done lol)
+        for i in range(len(cs)-1, -1, -1):
+            csp = cs[i]
+            if csp.contains_point(x, y):
+                return csp.card
+                
         # no card found
         return None
     
@@ -519,7 +523,7 @@ class Interface:
         if action is None:
             return # do nothing
         # else
-        print(action)
+        #print(action)
         state, data = action
 
         if state == 'QUIT':
@@ -561,7 +565,7 @@ class Interface:
 
     # lol this is a simple one 
     def execute_cycle(self):
-        print('pubbed cycle request')
+        #print('pubbed cycle request')
         self.request = 'CYCLE'
         self.action_state = 'WAITING'
 ## do note that a client reads from requests
