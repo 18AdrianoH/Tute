@@ -114,8 +114,9 @@ async def send(message, spub, pri, host, port, id, symob):
 
 async def run():
     # the user provides the server creds
-    host = 'localhost'
-    port = 5555
+    print('please enter the server\'s host and then port')
+    host = input()#'localhost'
+    port = int(input())#5555
     pub, pri = gen_keys_asym()
 
     sym = gen_key_sym()
@@ -153,18 +154,6 @@ async def run():
             state = await get(spub, pri, host, port, id, symob)
             gui.update(state)
             gui.draw()
-
-            if state['state'] != 'WAITING':
-                #print('center', state['center'])
-                #print('to play', state['to play'])
-                #print('order', state['player order'])
-                #print('game suit', state['game suit'])
-                #print(state['players cards'][id])
-                #print(state['won cards'][id])
-                print('>>>')
-            else:
-                #print('waiting for four players...')
-                print('...')
             
     print('finished')
 

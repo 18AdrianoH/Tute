@@ -150,8 +150,9 @@ async def handle(reader, writer):
     writer.close()
 
 async def main():
-    host = 'localhost'
-    port = 5555
+    print('please enter your host and then port')
+    host = input()#'localhost'
+    port = int(input())#5555
 
     server = await asyncio.start_server(
         handle, host, port)
