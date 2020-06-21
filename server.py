@@ -149,7 +149,7 @@ async def handle(reader, writer):
     writer.close()
 
 async def main():
-    host = '10.0.0.211'
+    host = 'localhost'
     port = 5555
 
     server = await asyncio.start_server(

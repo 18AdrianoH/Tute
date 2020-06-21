@@ -19,6 +19,8 @@ from crypto import ASYM_KEY_SIZE
 
 from tute import deserialize
 
+from gui import Interface
+
 READ_LEN = 1 << 14 # one kilobit
 
 # return the public key deserialized from the server
@@ -112,7 +114,7 @@ async def send(message, spub, pri, host, port, id, symob):
 
 async def run():
     # the user provides the server creds
-    host = '10.0.0.211'
+    host = 'localhost'
     port = 5555
     pub, pri = gen_keys_asym()
 
@@ -134,26 +136,34 @@ async def run():
     print('done, running...')
 
     running = True
+
+    gui = Interface(id, state)
     
     while running:
-        print('enter query')
-        query = input()
-        if query == 'Q':
+        query = gui.request
+        gui.request = None # ready to take in a new query (don't repeat!)
+        if query == 'QUIT':
             running = False
-        elif query == 'G':
-            state = await get(spub, pri, host, port, id, symob)
-            if (state['state'] == 'WAITING'):
-                print(state)
-            else:
-                print('center', state['center'])
-                print('to play', state['to play'])
-                print('order', state['player order'])
-                print('game suit', state['game suit'])
-                print(state['players cards'][id])
-                print(state['won cards'][id])
         else:
-            await send(query, spub, pri, host, port, id, symob)
-    
+            if not query is None:
+                await send(query, spub, pri, host, port, id, symob)
+
+            state = await get(spub, pri, host, port, id, symob)
+            gui.update(state)
+            gui.draw()
+
+            if state['state'] != 'WAITING':
+                #print('center', state['center'])
+                #print('to play', state['to play'])
+                #print('order', state['player order'])
+                #print('game suit', state['game suit'])
+                #print(state['players cards'][id])
+                #print(state['won cards'][id])
+                print('>>>')
+            else:
+                #print('waiting for four players...')
+                print('...')
+            
     print('finished')
 
 

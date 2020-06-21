@@ -54,7 +54,7 @@ class CardSprite:
     # only supports rotations that are 0, 90, 180, 270
     def __init__(self, card, width, height, rotation, x, y, back):
         # type of card
-        self.value = value, self.suit = card.split('_')
+        self.value, self.suit = card.split('_')
         self.card = card
 
         # positional information
@@ -130,7 +130,8 @@ class PlayerSprites:
         self.start_position = None # kinda necessary for subsequent additions
 
         # initialize the cards
-        self.rotation = self.init_rotation()
+        self.rotation = (0,0)
+        self.init_rotation()
 
         self.cards = cards
         self.won_cards = [] # lul
@@ -141,11 +142,14 @@ class PlayerSprites:
 
     # initialization helper functionality
     def init_rotation(self):
-        return \
-            (0, 0) if self.type == 'PLAYER' else \
-            (90, 90) if self.type == 'RIGHT' else \
-            (0, 180) if self.type == 'TOP' else \
-            (270, 270) if self.type == 'LEFT' else None
+        if self.type == 'PLAYER':
+            self.rotation = (0, 0)
+        elif self.type == 'RIGHT':
+            self.rotation =  (90, 90)
+        elif self.type == 'TOP':
+            self.rotation = (0, 180)
+        else:
+            self.rotation = (270, 270)
 
     # remember to use correctly rotated forms
     def init_card_dims(self):
@@ -155,9 +159,12 @@ class PlayerSprites:
         self.card_width = int(self.card_width)
         self.card_height = int(self.card_height)
 
-        self.real_width, self.real_height = \
-            self.width, self.height if self.type == 'PLAYER' or self.type == 'TOP' else \
-            self.height, self.width
+        if self.type == 'PLAYER' or self.type == 'TOP':
+            self.real_width = self.card_width 
+            self.real_height = self.card_height
+        else:
+            self.real_width = self.card_height 
+            self.real_height = self.card_width
 
     def init_card_sprites(self, cards):
         # decide on the width/height of cards
@@ -165,15 +172,16 @@ class PlayerSprites:
 
         # you get your leftmost corner looking towards the center
         # remember that the sideways ones have width as its height
-        self.start_position = \
-            (0, self.screen_height - self.card_height) if self.type == 'PLAYER' else \
-            (self.screen_height - self.card_width, self.screen_width - self.card_height) if self.type == 'RIGHT' else \
-            (self.screen_width - self.card_width, 0) if self.type == 'TOP' else \
-            (0,0) if self.type == 'LEFT' else None
+        if self.type == 'PLAYER':
+            self.start_position = (0, self.screen_height - self.card_height)
+        elif self.type == 'RIGHT':
+            self.start_position = (self.screen_height - self.card_width, self.screen_width - self.card_height)
+        elif self.type == 'TOP':
+            self.start_position = (self.screen_width - self.card_width, 0)
+        else:
+            self.start_position = (0,0)
         
-        self.update_cards(cards)
-    
-    # TODO for both add reveals
+        self.update_cards(cards, [])
 
     # it will regenerate the whole graphics shit
     def update_cards(self, cards, revealed_cards):
@@ -206,7 +214,15 @@ class PlayerSprites:
                 y_pos = i * offset + starty # go down so positive
             
             self.card_sprites.append(
-                CardSprite(card, self.real_width, self.real_height, self.rotation, x_pos, y_pos, back)
+                CardSprite(
+                    card, 
+                    self.real_width, 
+                    self.real_height, 
+                    self.rotation, 
+                    0,#x_pos,#TODO 
+                    0,#y_pos,# TODO
+                    back
+                    )
                 )
     # this is very similar to above, it's just shifted up
     def update_won_cards(self, won_cards, revealed_cards):
@@ -247,7 +263,15 @@ class PlayerSprites:
                 next_y = i * offset + start_y
             
             self.won_card_sprites.append(
-                CardSprite(card, self.real_width, self.real_height, self.rotation, x_pos, y_pos, back)
+                CardSprite(
+                    card, 
+                    self.real_width, 
+                    self.real_height, 
+                    self.rotation,
+                    0,#x_pos, #TODO
+                    0,#y_pos, #TODO
+                    back
+                    )
             )
 
     def update(self, cards, won_cards, revealed_cards, revealed_won_cards):
@@ -258,10 +282,10 @@ class PlayerSprites:
     # note how it displays in order
     # also note how the card_sprites are added to display in order previously
     def display(self, window):
-        for card in self.cards:
-            card.display(window)
-        for card in self.won_cards:
-            card.display(window)
+        for cardsp in self.card_sprites:
+            cardsp.display(window)
+        for cardsp in self.won_card_sprites:
+            cardsp.display(window)
 
 # this encapsulates all of the players' cards
 # this handles basically all sprites in the game
@@ -291,12 +315,12 @@ class Sprites:
             index += 1
         
         for i in range(4):
-            self.left_player_sprites.append(
+            self.player_sprites.append(
                 PlayerSprites(
                     player_cards[player_order[index]],
                     self.screen_width,
                     self.screen_height,
-                    type[i],
+                    self.types[i],
                     player_order[index]
                     )
                 )
@@ -322,10 +346,10 @@ class Sprites:
         return None
     
     def update(self, game_state):
-        for player_sprites in self.player_sprites:
-            self.player_sprites.update(
-                game_state['players cards'][player_sprites.player_id],
-                game_state['won cards'][player_sprites.player_id], 
+        for ob in self.player_sprites:
+            ob.update(
+                game_state['players cards'][ob.player_id],
+                game_state['won cards'][ob.player_id], 
                 game_state['revealed cards'], game_state['revealed won cards']
                 )
 
@@ -339,12 +363,18 @@ class Sprites:
             if i > 0:
                 x_i += offset # usual left to right action
             self.center_sprites.append(
-                CardSprite(center[i], self.center_card_width, self.center_card_height, 0, x_i, y_i, False)
+                CardSprite(
+                    center[i], 
+                    self.center_card_width, 
+                    self.center_card_height, 
+                    (0,0), 
+                    0,#x_i,#TODO 
+                    0,#y_i,#TODO
+                    False
+                    )
             )
 
 #################### Orchestration for Graphics Below ####################
-
-## TODO add center
 
 # will display a pygame game and return messages based on in user input
 # it takes in game state and uses that to display and returns messages
@@ -375,7 +405,7 @@ class Interface:
             self.sprites = Sprites(
                 self.game_state['players cards'],
                 self.game_state['player order'], 
-                player_id, 
+                self.player, 
                 self.screen_width, 
                 self.screen_height
             ) # sprites to show for this person
@@ -383,11 +413,11 @@ class Interface:
             self.sprites.update(self.game_state)
     
     def draw(self, color=COLOR_WHITE):
+        print('draw')
         self.window.fill(color)
 
         if not self.sprites is None:
             self.sprites.display(self.window)
-            # display center cards
         
         pygame.display.update()
     
@@ -473,15 +503,19 @@ class Interface:
         pygame.quit()
 
     def execute_reveal(self, coords):
-        play_string = 'REVEAL' + self.sprites.card_clicked(coords)
-        self.request = play_string
-        self.state = 'WAITING'
+        clicked = self.sprites.card_clicked(coords)
+        if not clicked is None:
+            play_string = 'REVEAL,,,,,,,,,,' + clicked
+            self.request = play_string
+            self.state = 'WAITING'
 
     def execute_play(self, coords):
         # card_clicked returns the string rep of the card
-        play_string = 'PLAY' + self.sprites.card_clicked(coords)
-        self.request = play_string
-        self.state = 'WAITING'
+        clicked = self.sprites.card_clicked(coords)
+        if not clicked is None:
+            play_string = 'PLAY,,,,,,,,,,' + clicked
+            self.request = play_string
+            self.state = 'WAITING'
 
     # lol this is a simple one 
     def execute_cycle(self):
