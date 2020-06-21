@@ -4,6 +4,7 @@
 
 import pygame
 
+from tute import Tute, to_dict # TODO remove this, it's only for testing
 from tute import SUITS
 from tute import VALUES
 
@@ -37,12 +38,14 @@ from tute import VALUES
     | | | | | | | | | | | |  |__|
 """
 
-SCREEN_WIDTH = 1600
-SCREEN_HEIGHT = 900
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+
+EPSILON = 10
 
 COLOR_WHITE = (255, 255, 255)
 CARD_HEIGHT_TO_WIDTH_RATIO = 279.0/201.0 # this is width/height
-CARD_WIDTHS_PER_SCREEN = 12
+CARD_WIDTHS_PER_SCREEN = 16
 CARD_DENSITY = 2 # 1/CARD_DENSITY is how much we show of each card
 INVERSE_CENTER_X = 2
 INVERSE_CENTER_Y = 2
@@ -126,7 +129,7 @@ class PlayerSprites:
     def __init__(self, cards, screen_width, screen_height, type, player_id):
         self.player_id = player_id
 
-        self.type = type== 'LEFT'
+        self.type = type
         self.screen_height = screen_height
         self.screen_width = screen_width
 
@@ -147,7 +150,7 @@ class PlayerSprites:
         self.cards = cards
         self.won_cards = [] # lul
         
-        self.card_sprites = None
+        self.card_sprites = []
         self.init_card_sprites(cards) # now they are not None
         self.won_card_sprites = [] # lol it starts empty
 
@@ -184,11 +187,13 @@ class PlayerSprites:
         # you get your leftmost corner looking towards the center
         # remember that the sideways ones have width as its height
         if self.type == 'PLAYER':
-            self.start_position = (0, self.screen_height - self.card_height)
+            # offset with card_width avoids collision with left
+            self.start_position = (self.card_height, self.screen_height - self.card_height)
         elif self.type == 'RIGHT':
-            self.start_position = (self.screen_height - self.card_width, self.screen_width - self.card_height)
+            self.start_position = (self.screen_width - self.card_height, self.screen_height - self.card_width)
         elif self.type == 'TOP':
-            self.start_position = (self.screen_width - self.card_width, 0)
+            # last card_height is to avoid collision with right
+            self.start_position = (self.screen_width - self.card_width - self.card_height, 0)
         else:
             self.start_position = (0,0)
         
@@ -209,9 +214,10 @@ class PlayerSprites:
             x_pos, y_pos = None, None
             card = cards[i]
 
-            back = card in revealed_cards
+            back = not card in revealed_cards
 
             if self.type == 'PLAYER':
+                back = False
                 x_pos = i * offset+ startx # go right so positive
                 y_pos = starty
             elif self.type == 'RIGHT':
@@ -224,14 +230,15 @@ class PlayerSprites:
                 x_pos = startx
                 y_pos = i * offset + starty # go down so positive
             
+            #print(f'display card {card} at {x_pos}, {y_pos}, from type {self.type}')
             self.card_sprites.append(
                 CardSprite(
                     card, 
-                    self.real_width, 
-                    self.real_height, 
+                    self.card_width, 
+                    self.card_height, 
                     self.rotation, 
-                    0,#x_pos,#TODO 
-                    0,#y_pos,# TODO
+                    x_pos,
+                    y_pos,
                     back
                     )
                 )
@@ -257,30 +264,32 @@ class PlayerSprites:
             x_pos, y_pos = None, None
             card = won_cards[i]
 
-            back = card in revealed_cards
+            back = not card in revealed_cards
 
             if self.type == 'PLAYER':
-                next_x = i * offset + start_x
-                next_y = start_y
+                back = False
+                x_pos = i * offset + start_x
+                y_pos = start_y
             elif self.type == 'RIGHT':
-                next_x = start_x
-                next_y = i * offset * -1 + start_y
+                x_pos = start_x
+                y_pos = i * offset * -1 + start_y
             elif self.type == 'TOP':
                 # we'll display for 'them' not for 'you'
-                next_x = i * offset * -1 + start_x # remember we start on the right
-                next_y = start_y
+                x_pos = i * offset * -1 + start_x # remember we start on the right
+                y_pos = start_y
             elif self.type == 'LEFT':
-                next_x = start_x 
-                next_y = i * offset + start_y
+                x_pos = start_x 
+                y_pos = i * offset + start_y
             
+            #print(f'display won card {card} at {x_pos}, {y_pos}, from type {self.type}')
             self.won_card_sprites.append(
                 CardSprite(
                     card, 
-                    self.real_width, 
-                    self.real_height, 
+                    self.card_width, 
+                    self.card_height, 
                     self.rotation,
-                    0,#x_pos, #TODO
-                    0,#y_pos, #TODO
+                    x_pos,
+                    y_pos,
                     back
                     )
             )
@@ -350,25 +359,40 @@ class Sprites:
     # we only react to cards clicked if they are ours (we don't get to choose what to do with others' cards)
     def card_clicked(self, xy):
         x, y = xy
-        for card_sprite in self.bot_player_sprites:
+        for card_sprite in self.bot_player_sprites.card_sprites:
             if card_sprite.contains_point(x, y):
                 return card_sprite.card
         # no card found
         return None
     
     def update(self, game_state):
+        # patch because of mistakes made
+        revealed_cards = set()
+        revealed_won_cards = set()
+
+        for id in game_state['player order']:
+            for card,rev in game_state['revealed cards'][id].items():
+                if rev == True:
+                    revealed_cards.add(card)
+            for card,rev in game_state['revealed won cards'][id].items():
+                if rev == True:
+                    revealed_won_cards.add(card)
+        
+        #print(revealed_cards, revealed_won_cards)# seems to be working
+
         for ob in self.player_sprites:
             ob.update(
                 game_state['players cards'][ob.player_id],
                 game_state['won cards'][ob.player_id], 
-                game_state['revealed cards'], game_state['revealed won cards']
+                revealed_cards, 
+                revealed_won_cards
                 )
 
         self.center_sprites = []
         i = 0
         center = game_state['center']
-        x_i = int(self.screen_width / INVERSE_CENTER_X)
-        y_i = int(self.screen_height / INVERSE_CENTER_Y)
+        x_i = int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width
+        y_i = int(self.screen_height / INVERSE_CENTER_Y) - self.center_card_height
         offset = int(self.center_card_width / CARD_DENSITY)
         while i < len(center) and center[i] is not None:
             if i > 0:
@@ -379,8 +403,8 @@ class Sprites:
                     self.center_card_width, 
                     self.center_card_height, 
                     (0,0), 
-                    0,#x_i,#TODO 
-                    0,#y_i,#TODO
+                    x_i,
+                    y_i,
                     False
                     )
             )
@@ -422,7 +446,7 @@ class Interface:
                 self.screen_height
             ) # sprites to show for this person
         if not self.sprites is None:
-            print('NOT NONE')
+            #print('NOT NONE')
             self.sprites.update(self.game_state)
     
     def draw(self, color=COLOR_WHITE):
@@ -453,23 +477,25 @@ class Interface:
                 return ('QUIT', None)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # left mid right scrollup scrolldown
-                left, _, right = pygame.mouse.get_pressed()
+                #left, mid, right = pygame.mouse.get_pressed() # doesn't work
+                button = event.button
+                #print(button)
                 if self.action_state == 'WAITING':
+                    #print(button, event.button)
                     pos = pygame.mouse.get_pos()
-                    print('clicked at ', str(pos))
-                    if left and right:
-                        # can't do both
-                        return None
-                    elif left:
+                    #print('clicked at ', str(pos))
+                    if button == 1:
                         return ('PLAY-SELECT', pos)
-                    elif right:
+                    elif button == 3:
                         return ('REVEAL-SELECT', pos)
+                    else:
+                        return None
                 else:
                     # clicked too fast somewhere so was in another state
                     return None
             elif event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
-                print('let go at ', str(pos))
+                #print('let go at ', str(pos))
                 if self.action_state == 'PLAY-SELECT':
                     # pos technically not necessary since we got that before
                     return ('PLAY', pos)
@@ -488,12 +514,13 @@ class Interface:
 
     def execute_actions(self):
         # this implementation insures that one event happens per execute cycle
-        actions = self.get_action(pygame.event.get())
+        action = self.get_action(pygame.event.get())
 
-        if actions is None:
+        if action is None:
             return # do nothing
         # else
-        state, data = actions
+        print(action)
+        state, data = action
 
         if state == 'QUIT':
             self.execute_quit()
@@ -503,6 +530,10 @@ class Interface:
             self.execute_reveal(data)
         elif state == 'CYCLE':
             self.execute_cycle()
+        elif state == 'PLAY-SELECT':
+            self.action_state = 'PLAY-SELECT'
+        elif state == 'REVEAL-SELECT':
+            self.action_state = 'REVEAL-SELECT'
 
         # if we are going to a select state then we do nothing since those are just there to insure
         # that we dont do multiple actions faster than we can see by mouse down repeatedly
@@ -518,7 +549,7 @@ class Interface:
         if not clicked is None:
             play_string = 'REVEAL,,,,,,,,,,' + clicked
             self.request = play_string
-            self.state = 'WAITING'
+        self.action_state = 'WAITING'
 
     def execute_play(self, coords):
         # card_clicked returns the string rep of the card
@@ -526,13 +557,13 @@ class Interface:
         if not clicked is None:
             play_string = 'PLAY,,,,,,,,,,' + clicked
             self.request = play_string
-            self.state = 'WAITING'
+        self.action_state = 'WAITING'
 
     # lol this is a simple one 
     def execute_cycle(self):
         print('pubbed cycle request')
         self.request = 'CYCLE'
-        self.state = 'WAITING'
+        self.action_state = 'WAITING'
 ## do note that a client reads from requests
 
 if __name__ == '__main__':
@@ -540,11 +571,11 @@ if __name__ == '__main__':
 
     # create our demo state
     state_start = {'state' : 'WAITING'}
-    state_real = {
+    demo_state= {
         'state' : 'ROUNDS',
         'to play' : 'demodude',
         'player order': ['demodude', '1', '2' , '3'],
-        'center' : ['A_E', None, None, None],
+        'center' : ['A_C', 'A_B', 'A_O', None],
         'players cards' : {
             'demodude' : ['A_E', 'A_B'], 
             '1' : ['A_E', 'A_B'],
@@ -591,24 +622,38 @@ if __name__ == '__main__':
         }
     }
 
+    # a more realistic demo state
+    game = Tute()
+    game.add_player('demodude')
+    game.add_player('1')
+    game.add_player('2')
+    game.add_player('3')
+    game.init_game()
+    game.increment_state() # starts the game (TODO might want to make automatic)
+
+    game.reveal_card('1', game.player_cards['1'][0])
+    game.play_card('demodude', game.player_cards['demodude'][0])
+    game.increment_state()
+    state = to_dict(game)
+
+    #print(state)
+
     gui = Interface('demodude', state_start)
     
     running = True
-    it = 0
+    #it = 0
     while running:
-        it += 1
-        print(it)
+        #it += 1
+        #print(it)
         gui.execute_actions()
 
         query = gui.request
         gui.request = None # ready to take in a new query (don't repeat!)
-        print(query)
+        if not query is None:
+            print(f'query is {query}')
         if query == 'QUIT':
             running = False
         
-        if it > 60:
-            gui.update(state_real)
-        else: # TODO right now it freezes on this state >:(
-            gui.update(state_start)
+        gui.update(state)
         gui.draw()
     print('finished')

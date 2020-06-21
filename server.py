@@ -65,6 +65,7 @@ async def handle(reader, writer):
     # else we'll only respond if they have a valid username and they've signed in a valid way
     else:
         # AES handshake (lmao this is the dumbest shit ever)
+        # smarter idea would just be look at offsets, but it's still not perfect lol
         if b',,' in data and not b',,,,,,,,,,' in data:
             # it's 4 commas for low probability
             msg1, msg2 = data.split(b',,')
