@@ -4,6 +4,8 @@
 
 import pygame
 
+pygame.font.init() # don't want to init all of python because that wants to read my keystrokes
+
 # TODO display play order, players, game suit
 from tute import Tute, to_dict # TODO remove this, it's only for testing
 from tute import SUITS
@@ -45,6 +47,7 @@ SCREEN_HEIGHT = 840
 EPSILON = 10
 
 COLOR_WHITE = (255, 255, 255)
+COLOR_BLACK = (0,0,0)
 CARD_HEIGHT_TO_WIDTH_RATIO = 279.0/201.0 # this is width/height
 CARD_WIDTHS_PER_SCREEN = 14
 CARD_DENSITY = 2 # 1/CARD_DENSITY is how much we show of each card
@@ -161,6 +164,28 @@ class PlayerSprites:
         self.card_sprites = []
         self.init_card_sprites(cards) # now they are not None
         self.won_card_sprites = [] # lol it starts empty
+
+        # who's who?
+        self.font = pygame.font.Font('freesansbold.ttf', 20) 
+        self.id_text = self.font.render(player_id, True, COLOR_BLACK) 
+        self.id_text_rect = self.id_text.get_rect()
+        idx, idy = self.start_position
+        if self.type == 'PLAYER':
+            idx += int((14/CARD_DENSITY * self.card_width) + EPSILON)
+            idy = self.screen_height - 3* EPSILON
+        elif self.type == 'RIGHT':
+            idx = 1300 # LMAO
+            idy = 152
+        elif self.type == 'TOP':
+            idx = 2 * self.card_height + 25 * EPSILON
+            idy = 7 * EPSILON #int((16/CARD_DENSITY * self.card_width) + EPSILON)
+        else:
+            idx = 10 * EPSILON
+            idy = 676
+        self.id_text_rect.center = (
+            idx,
+            idy
+        )
 
     # initialization helper functionality
     def init_rotation(self):
@@ -320,6 +345,8 @@ class PlayerSprites:
             cardsp.display(window)
         for cardsp in self.won_card_sprites:
             cardsp.display(window)
+        
+        window.blit(self.id_text, self.id_text_rect)
 
 # this encapsulates all of the players' cards
 # this handles basically all sprites in the game
@@ -337,10 +364,22 @@ class Sprites:
         self.center_card_width = int(self.center_card_width)
         self.center_card_height = int(self.center_card_height)
 
+        # so people know the suit
         self.suit_img = SUIT_IMAGE[game_suit]
         self.suit_x = x_i = int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width - SUIT_HW
         self.suit_y = y_i = int(self.screen_height / INVERSE_CENTER_Y) - SUIT_HW # same as center
         self.suit_img = pygame.transform.scale(self.suit_img, (SUIT_HW, SUIT_HW))
+
+        # who is to play? (LOL WE SHOULD REUSE THE LOCATION STUFF WTF)
+        self.font = pygame.font.Font('freesansbold.ttf', 20) 
+        self.text = self.font.render('Siguiente :  '+to_play, True, COLOR_BLACK) 
+        self.text_rect = self.text.get_rect()
+        self.text_rect.center = (
+            int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width - SUIT_HW,
+            int(self.screen_height / INVERSE_CENTER_Y) + 2 * EPSILON # further down!
+        )
+
+        # who's who is in PlayerSprites because it belongs to the player type
 
         self.types = ['PLAYER', 'RIGHT', 'TOP', 'LEFT']
 
@@ -349,7 +388,7 @@ class Sprites:
 
         self.center_sprites = []
 
-        print(player_order)
+        #print(player_order)
         index = 0
         while player_order[index] != player_id:
             index += 1
@@ -377,6 +416,7 @@ class Sprites:
             sprite.display(window)
         
         window.blit(self.suit_img, (self.suit_x, self.suit_y))
+        window.blit(self.text, self.text_rect)
     
     # we only react to cards clicked if they are ours (we don't get to choose what to do with others' cards)
     def card_clicked(self, xy):
@@ -407,6 +447,13 @@ class Sprites:
             for card,rev in game_state['revealed won cards'][id].items():
                 if rev == True:
                     revealed_won_cards.add(card)
+        
+        self.text = self.font.render('Siguiente :  ' + game_state['to play'], True, COLOR_BLACK)
+        self.text_rect = self.text.get_rect()
+        self.text_rect.center = (
+            int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width - SUIT_HW,
+            int(self.screen_height / INVERSE_CENTER_Y) + 2 * EPSILON # further down!
+        )
         
         #print(revealed_cards, revealed_won_cards)# seems to be working
 
@@ -515,7 +562,7 @@ class Interface:
                 if self.action_state == 'WAITING':
                     #print(button, event.button)
                     pos = pygame.mouse.get_pos()
-                    #print('clicked at ', str(pos))
+                    print('clicked at ', str(pos))
                     if button == 1:
                         return ('PLAY-SELECT', pos)
                     elif button == 3:
@@ -527,7 +574,7 @@ class Interface:
                     return None
             elif event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
-                #print('let go at ', str(pos))
+                print('let go at ', str(pos))
                 if self.action_state == 'PLAY-SELECT':
                     # pos technically not necessary since we got that before
                     return ('PLAY', pos)
@@ -656,23 +703,24 @@ if __name__ == '__main__':
                 }, 
         },
         'game suit' : 'O',
+        'to play' : 'demodude',
     }
 
     # a more realistic demo state
     game = Tute()
     game.add_player('demodude')
-    game.add_player('1')
-    game.add_player('2')
-    game.add_player('3')
+    game.add_player('delia')
+    game.add_player('paula')
+    game.add_player('alejandro')
     game.init_game()
     game.increment_state() # starts the game (TODO might want to make automatic)
 
-    game.reveal_card('1', game.player_cards['1'][0])
+    game.reveal_card('alejandro', game.player_cards['alejandro'][0])
     #game.play_card('demodude', game.player_cards['demodude'][0])
     game.increment_state()
     state = to_dict(game)
 
-    #print(state)
+    print(state['player order'])
 
     gui = Interface('demodude', state_start)
     
