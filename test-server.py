@@ -1,8 +1,36 @@
 import asyncio
 import ssl
+import subprocess
+import os
 
 from tute import Tute
 from tute import serialize
+
+DEFAULT_HOST = 'localhost'
+DEFAULT_PORT = 10000
+
+# 2^12 = 256 bytes
+READ_LEN = 1 << 14
+
+KEYF = 'server.key'
+SIGF = 'server.cert'
+SSL_DAYS = '1000'
+
+SSL_COMMAND = [
+    'openssl',
+    'req',
+    '-x509',
+    '-newkey',
+    'rsa:2048',
+    '-keyout',
+    KEYF,
+    '-nodes',
+    '-out',
+    SIGF,
+    '-sha256',
+    '-days',
+    SSL_DAYS
+]
 
 # message can be <type>, <card>, <player_id>
 # if no action b'NONE,NONE,<id>'
@@ -55,16 +83,47 @@ async def echo(reader, writer):
         response = serialize(game)
         writer.write(response)
         await writer.drain()
-            
-SERVER_ADDRESS = ('localhost', 10000)
-event_loop = asyncio.get_event_loop()
+    return
 
-ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-ssl_context.check_hostname = False
-ssl_context.load_cert_chain('server.cert', 'server.key')
+# when we run the server...
 
-factory = asyncio.start_server(echo, *SERVER_ADDRESS,
-                               ssl=ssl_context)
+if __name__ == '__main__': 
+    print('please enter your host and then port')
+    host = input()
+    port = input()
+
+    if host == '':
+        host = DEFAULT_HOST
+
+    if port == '':
+        port = DEFAULT_PORT
+    else:
+        port = int(port)
+
+    # create certs if necessary and use em (key encrypts, cert verifies)
+    print('checking for your key and cert files... they last a day and may need to be replaced')
+    print('want to replace them if they exist? y/n')
+    nf = input()
+    if nf == 'Y' or nf == 'y':
+        if os.path.isfile(KEYF):
+            os.remove(KEYF)
+        if os.path.isfile(SIGF):
+            os.remove(SIGF)
+    try:
+        assert os.path.isfile(KEYF) and os.path.isfile(SIGF)
+    except AssertionError as ae:
+        subprocess.call(SSL_COMMAND)
+
+    SERVER_ADDRESS = (host, port)
+    event_loop = asyncio.get_event_loop()
+
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ssl_context.check_hostname = False
+    ssl_context.load_cert_chain(SIGF, KEYF)
+
+    print('creating and starting server')
+    factory = asyncio.start_server(echo, *SERVER_ADDRESS,
+                                ssl=ssl_context)
 
 server = event_loop.run_until_complete(factory)
 
