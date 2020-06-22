@@ -1,3 +1,5 @@
 *.pyc
 *.cert
 *.key
+*.pem
+*.crt

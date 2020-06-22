@@ -186,6 +186,9 @@ class Tute:
                 self.player_cards[player_id] = None # init when we start the game
                 self.player_cards_state[player_id] = None #init when we start the game
                 self.player_won_cards[player_id] = None # init when we start the game
+                # bruh
+                if len(self.player_order) == 4:
+                    self.increment_state()
         else:
             print('Can only add players in the WAITING state.') # LOL
     
