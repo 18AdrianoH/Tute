@@ -24,18 +24,15 @@ async def get(host, port):
         port
         )
 
-    plain = b'GET,'
-    enc = encrypt_sym(plain, symob) +  b',' + idu
-    writer.write(enc)
-
+    data = b'GET,'
+    writer.write(data)
+    
     response = await reader.read(READ_LEN)
-    # recieves a json representation of the game state
-    spain = decrypt_sym(response, symob)
-    spains = spain.split(b',')
-    verify(idu, spains[-1], spub) # they'll send us back a signature with our name
-    state = deserialize(spains[0])
+    state = deserialize(response)
 
+    await writer.drain()
     writer.close()
+
     return state
 
 # sends a message, but does not inquire into state
@@ -46,8 +43,8 @@ async def send(message, host, port, id:
         )
     data = message.encode('utf-8') + b',' + id.encode('utf-8')
 
-    writer.write(data)
-    # TODO add a wait for a response because otherwise we can get a race condition
+    await writer.write(data)
+    await writer.drain()
     writer.close()
 
 async def run():

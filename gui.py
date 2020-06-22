@@ -39,17 +39,18 @@ from tute import VALUES
     | | | | | | | | | | | |  |__|
 """
 
-SCREEN_WIDTH = 1300
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 1440
+SCREEN_HEIGHT = 840
 
 EPSILON = 10
 
 COLOR_WHITE = (255, 255, 255)
 CARD_HEIGHT_TO_WIDTH_RATIO = 279.0/201.0 # this is width/height
 CARD_WIDTHS_PER_SCREEN = 14
-CARD_DENSITY = 2.5 # 1/CARD_DENSITY is how much we show of each card
+CARD_DENSITY = 2 # 1/CARD_DENSITY is how much we show of each card
 INVERSE_CENTER_X = 2
 INVERSE_CENTER_Y = 2
+SUIT_HW = 80
 
 # you would literally not believe how much this speeds everything up
 # loading images (especially the back is a huge fucking bottleneck)
@@ -57,6 +58,12 @@ BACK_IMAGE = pygame.image.load('./cartas-españolas/back.jpg')
 GET_IMAGE = {
     val + '_' + st : pygame.image.load('./cartas-españolas/'+val+'_'+st+'.jpg') for val in VALUES for st in SUITS
     }
+SUIT_IMAGE = {
+    'O':pygame.image.load('./cartas-españolas/oros.jpg'),
+    'E':pygame.image.load('./cartas-españolas/espadas.jpg'),
+    'B':pygame.image.load('./cartas-españolas/bastos.jpg'),
+    'C':pygame.image.load('./cartas-españolas/copas.jpg'),
+}
 
 #################### Sprite Types and Graphics Helpers ####################
 # A dummy card sprite can have None as its 'card' or we can just put a placeholder
@@ -268,12 +275,15 @@ class PlayerSprites:
             x_pos, y_pos = None, None
             card = won_cards[i]
 
-            back = not card in revealed_cards
+            revealed = card in revealed_cards
+            back = not revealed
 
             if self.type == 'PLAYER':
                 back = False
                 x_pos = i * offset + start_x
                 y_pos = -1 * EPSILON  + start_y # up epsilon to allow for a little bit of responsiveness when u reveal
+                if revealed:
+                    y_pos -= EPSILON # to show others that we are revealing
             elif self.type == 'RIGHT':
                 x_pos = start_x
                 y_pos = i * offset * -1 + start_y
@@ -315,7 +325,7 @@ class PlayerSprites:
 # this handles basically all sprites in the game
 # there is no text in the game (because you can see all the cards)
 class Sprites:
-    def __init__(self, player_cards, player_order, player_id, screen_width, screen_height):
+    def __init__(self, player_cards, player_order, player_id, screen_width, screen_height, game_suit, to_play):
         self.player_id = player_id
 
         self.screen_width = screen_width
@@ -326,6 +336,11 @@ class Sprites:
         self.center_card_height = CARD_HEIGHT_TO_WIDTH_RATIO * self.center_card_width
         self.center_card_width = int(self.center_card_width)
         self.center_card_height = int(self.center_card_height)
+
+        self.suit_img = SUIT_IMAGE[game_suit]
+        self.suit_x = x_i = int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width - SUIT_HW
+        self.suit_y = y_i = int(self.screen_height / INVERSE_CENTER_Y) - SUIT_HW # same as center
+        self.suit_img = pygame.transform.scale(self.suit_img, (SUIT_HW, SUIT_HW))
 
         self.types = ['PLAYER', 'RIGHT', 'TOP', 'LEFT']
 
@@ -360,17 +375,23 @@ class Sprites:
         
         for sprite in self.center_sprites:
             sprite.display(window)
+        
+        window.blit(self.suit_img, (self.suit_x, self.suit_y))
     
     # we only react to cards clicked if they are ours (we don't get to choose what to do with others' cards)
     def card_clicked(self, xy):
         x, y = xy
         cs = self.bot_player_sprites.card_sprites
+        css = self.bot_player_sprites.won_card_sprites
         # why go backwards? hitboxes. (this is the shittiest least mantainable crap ive ever done lol)
         for i in range(len(cs)-1, -1, -1):
             csp = cs[i]
             if csp.contains_point(x, y):
                 return csp.card
-                
+        for i in range(len(css)-1, -1, -1):
+            csp = css[i]
+            if csp.contains_point(x, y):
+                return csp.card
         # no card found
         return None
     
@@ -452,7 +473,9 @@ class Interface:
                 self.game_state['player order'], 
                 self.player, 
                 self.screen_width, 
-                self.screen_height
+                self.screen_height,
+                self.game_state['game suit'],
+                self.game_state['to play']
             ) # sprites to show for this person
         if not self.sprites is None:
             #print('NOT NONE')
@@ -565,7 +588,7 @@ class Interface:
         if not self.sprites is None:
             # card_clicked returns the string rep of the card
             clicked = self.sprites.card_clicked(coords)
-            if not clicked is None:
+            if not clicked is None and not clicked in self.game_state['won cards'][self.player]:
                 play_string = 'PLAY,' + clicked
                 self.request = play_string
         self.action_state = 'WAITING'
@@ -578,94 +601,95 @@ class Interface:
 ## do note that a client reads from requests
 
 # testing stuff below if it helps u
-# if __name__ == '__main__':
-#     print('demo')
+if __name__ == '__main__':
+    print('demo')
 
-#     # create our demo state
-#     state_start = {'state' : 'WAITING'}
-#     demo_state= {
-#         'state' : 'ROUNDS',
-#         'to play' : 'demodude',
-#         'player order': ['demodude', '1', '2' , '3'],
-#         'center' : ['A_C', 'A_B', 'A_O', None],
-#         'players cards' : {
-#             'demodude' : ['A_E', 'A_B'], 
-#             '1' : ['A_E', 'A_B'],
-#             '2' : ['A_E', 'A_B'],
-#             '3' : ['A_E', 'A_B'],
-#         },
-#         'won cards' : {
-#             'demodude' : ['A_E'], 
-#             '1' : ['A_E'],
-#             '2' : ['A_E'],
-#             '3' : ['A_E'],
-#         } ,
-#         'revealed cards' : {
-#             'demodude' : {
-#                 'A_E' : False, 
-#                 'A_B' : False,
-#                 }, 
-#             '1' : {
-#                 'A_E' : False, 
-#                 'A_B' : False,
-#                 }, 
-#             '2' : {
-#                 'A_E' : False, 
-#                 'A_B' : False,
-#                 }, 
-#             '3' : {
-#                 'A_E' : False, 
-#                 'A_B' : False,
-#                 }, 
-#         },
-#         'revealed won cards' : {
-#             'demodude' : {
-#                 'A_E' : False, 
-#                 }, 
-#             '1' : {
-#                 'A_E' : False, 
-#                 }, 
-#             '2' : {
-#                 'A_E' : False, 
-#                 }, 
-#             '3' : {
-#                 'A_E' : False, 
-#                 }, 
-#         }
-#     }
+    # create our demo state
+    state_start = {'state' : 'WAITING'}
+    demo_state= {
+        'state' : 'ROUNDS',
+        'to play' : 'demodude',
+        'player order': ['demodude', '1', '2' , '3'],
+        'center' : ['A_C', 'A_B', 'A_O', None],
+        'players cards' : {
+            'demodude' : ['A_E', 'A_B'], 
+            '1' : ['A_E', 'A_B'],
+            '2' : ['A_E', 'A_B'],
+            '3' : ['A_E', 'A_B'],
+        },
+        'won cards' : {
+            'demodude' : ['A_E'], 
+            '1' : ['A_E'],
+            '2' : ['A_E'],
+            '3' : ['A_E'],
+        } ,
+        'revealed cards' : {
+            'demodude' : {
+                'A_E' : False, 
+                'A_B' : False,
+                }, 
+            '1' : {
+                'A_E' : False, 
+                'A_B' : False,
+                }, 
+            '2' : {
+                'A_E' : False, 
+                'A_B' : False,
+                }, 
+            '3' : {
+                'A_E' : False, 
+                'A_B' : False,
+                }, 
+        },
+        'revealed won cards' : {
+            'demodude' : {
+                'A_E' : False, 
+                }, 
+            '1' : {
+                'A_E' : False, 
+                }, 
+            '2' : {
+                'A_E' : False, 
+                }, 
+            '3' : {
+                'A_E' : False, 
+                }, 
+        },
+        'game suit' : 'O',
+    }
 
-#     # a more realistic demo state
-#     game = Tute()
-#     game.add_player('demodude')
-#     game.add_player('1')
-#     game.add_player('2')
-#     game.add_player('3')
-#     game.init_game()
-#     game.increment_state() # starts the game (TODO might want to make automatic)
+    # a more realistic demo state
+    game = Tute()
+    game.add_player('demodude')
+    game.add_player('1')
+    game.add_player('2')
+    game.add_player('3')
+    game.init_game()
+    game.increment_state() # starts the game (TODO might want to make automatic)
 
-#     game.reveal_card('1', game.player_cards['1'][0])
-#     game.play_card('demodude', game.player_cards['demodude'][0])
-#     game.increment_state()
-#     state = to_dict(game)
+    game.reveal_card('1', game.player_cards['1'][0])
+    #game.play_card('demodude', game.player_cards['demodude'][0])
+    game.increment_state()
+    state = to_dict(game)
 
-#     #print(state)
+    #print(state)
 
-#     gui = Interface('demodude', state_start)
+    gui = Interface('demodude', state_start)
     
-#     running = True
-#     #it = 0
-#     while running:
-#         #it += 1
-#         #print(it)
-#         gui.execute_actions()
+    running = True
+    #it = 0
+    while running:
+        #it += 1
+        #print(it)
+        gui.execute_actions()
 
-#         query = gui.request
-#         gui.request = None # ready to take in a new query (don't repeat!)
-#         if not query is None:
-#             print(f'query is {query}')
-#         if query == 'QUIT':
-#             running = False
+        query = gui.request
+        gui.request = None # ready to take in a new query (don't repeat!)
+        if not query is None:
+            print(f'query is {query}')
+        if query == 'QUIT':
+            running = False
         
-#         gui.update(state)
-#         gui.draw()
-#     print('finished')
+        gui.update(state)
+        gui.draw()
+    print('finished')

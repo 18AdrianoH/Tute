@@ -1,5 +1,6 @@
 import asyncio
 import ssl
+import subprocess
 
 from tute import Tute
 from tute import serialize
@@ -7,6 +8,12 @@ from tute import serialize
 # necessary since -1 or empty will hang (wait until connection closed)
 READ_LEN = 1 << 12 # key size lmao
 # 256 length in bytes 
+
+KEYF = 'server.key'
+SIGF = 'server.cert'
+SSL_DAYS = '1'
+
+SSL_COMMAND = 'openssl req -x509 -newkey rsa:2048 -keyout' + KEYF + '-nodes -out' + SIGF + '-sha256 -days' + SSHL_DAYS
 
 game = Tute()
 peers = {}
@@ -30,7 +37,7 @@ async def handle(reader, writer):
         query_type = datas[0]
 
         # get request (want to know the state of the game)
-        if query_type[:3] == b'GET':
+        if query_type == b'GET':
             print('processing GET')
 
             state = serialize(game)
@@ -57,6 +64,7 @@ async def handle(reader, writer):
                         game.play_card(id_str, card)
                         print(f'{id_str} played {card}!')
 
+    await writer.drain()
     writer.close()
 
 async def main():
@@ -72,11 +80,21 @@ async def main():
     else:
         port = int(port)
 
+    try:
+        assert os.isfile(KEYF) and os.isfile(SIGF)
+    except AssertionError as ae:
+        subprocess.run(SSL_COMMAND)
+    
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ssl_context.check_hostname = False
+    ssl_context.load_cert_chain(SIGF, KEYF)
+
     # run the server with our server handle function
     server = await asyncio.start_server(
         handle, 
         host, 
-        port
+        port,
+        ssl=ssl_context
         )
 
     addr = server.sockets[0].getsockname()
