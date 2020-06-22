@@ -40,7 +40,7 @@ SSL_COMMAND = [
 
 RECV = 1 << 14
 
-game = Tute()
+game = Tute() # this is going to be imported by test-client which is unfortunate
 
 async def echo(reader, writer):
     global RECV
@@ -86,7 +86,6 @@ async def echo(reader, writer):
     return
 
 # when we run the server...
-
 if __name__ == '__main__': 
     print('please enter your host and then port')
     host = input()
@@ -125,15 +124,15 @@ if __name__ == '__main__':
     factory = asyncio.start_server(echo, *SERVER_ADDRESS,
                                 ssl=ssl_context)
 
-server = event_loop.run_until_complete(factory)
+    server = event_loop.run_until_complete(factory)
 
-# Enter the event loop permanently to handle all connections.
-try:
-    event_loop.run_forever()
-except KeyboardInterrupt:
-    pass
-finally:
-    server.close()
-    event_loop.run_until_complete(server.wait_closed())
-    print('server closed')
-    event_loop.close()
+    # Enter the event loop permanently to handle all connections.
+    try:
+        event_loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.close()
+        event_loop.run_until_complete(server.wait_closed())
+        print('server closed')
+        event_loop.close()

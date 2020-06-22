@@ -2,11 +2,19 @@
 
 import asyncio
 import ssl
+import subprocess
+import os
+import string
+import random
 
 from gui import Interface
 from tute import deserialize
 
-RECV = 1 << 14
+from server import SIGF, KEYF, SSL_COMMAND
+from server import DEFAULT_HOST, DEFAULT_PORT
+from server import RECV
+
+RAND_NAME_LEN = 16
 
 DEFAULT_STATE = {'state' : 'WAITING'}
 
@@ -64,20 +72,54 @@ async def play_client(address, gui, id):
                     break
     # once we exit the other while loop we are done
     writer.close()
+    return
 
+if __name__ == '__main__':
+    print('enter id')
+    # the user provides the server creds
+    print(f'please enter the server\'s host (blank for {DEFAULT_HOST}).')
+    host = input()
+    print(f'please enter the port you wish to bind to on the server (blank for {DEFAULT_PORT})')
+    port = input()
 
-SERVER_ADDRESS = ('localhost', 10000)
+    if host == '':
+        host = DEFAULT_HOST
 
-event_loop = asyncio.get_event_loop()
+    if port == '':
+        port = DEFAULT_PORT
+    else:
+        port = int(port)
 
-print('enter id')
-id = input()
-gui = Interface(id, DEFAULT_STATE)
+    print(f'please enter your id (blank for a random id of length {RAND_NAME_LEN})')
+    id = input()
 
-try:
-    event_loop.run_until_complete(
-        play_client(SERVER_ADDRESS, gui, id)
-    )
-finally:
-    print('closing event loop')
-    event_loop.close()
+    if id == '':
+        letters = string.ascii_lowercase
+        id = ''.join(random.choice(letters) for i in range(RAND_NAME_LEN))
+
+    # this will create the files necessary for you if you need them, but they have to be the same as the server's
+    print('checking for your key and cert files... they last a day and may need to be replaced')
+    print('want to replace them if they exist? y/n')
+    nf = input()
+    if nf == 'Y' or nf == 'y':
+        if os.path.isfile(SIGF):
+            os.remove(SIGF)
+        if os.path.isfile(KEYF):
+            os.remove(KEYF)
+    try:
+        assert  os.path.isfile(SIGF)
+    except AssertionError as ae:
+        subprocess.call(SSL_COMMAND)
+    
+    # here is the old launch code (from test-client times)
+    address = (host, port)
+    event_loop = asyncio.get_event_loop()
+    
+    gui = Interface(id, DEFAULT_STATE)
+    try:
+        event_loop.run_until_complete(
+            play_client(address, gui, id)
+        )
+    finally:
+        print('closing event loop')
+        event_loop.close()
