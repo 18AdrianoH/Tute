@@ -1,2 +1,3 @@
 # Tute
-A simple Tute game using basic Python asyncio and vanilla stuff. Has a nice feature of semi-security. Packets are encrypted, but I wrote it in house. Obviously you'd use SSL in a professional environment, but I wanted to get a bit of a better understanding about how this all worked. Note that we also reuse the same keypair. BAD.
+
+For SSL to work you'll need to havet the same key/certs. We can share them over whatsapp or some other good medium for that. Try using scp <source> <destination> to transfer key/cert files.

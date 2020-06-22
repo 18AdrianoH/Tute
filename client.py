@@ -2,31 +2,48 @@ import asyncio
 import ssl
 import string
 import random
+import os
+import subprocess
 
 from tute import deserialize
 
 from gui import Interface
 
-READ_LEN = 1 << 14 # one kilobit
+from server import SIGF, SSL_COMMAND
+from server import DEFAULT_HOST, DEFAULT_PORT
+from server import READ_LEN
+
 RAND_NAME_LEN = 16
-DEFAULT_HOST = 'localhost'
-DEFAULT_PORT = 5555
 
 # say hello to the server providing information about player id
 # server will say hello back
-async def hello():
-    pass
-
-# given the server's public key, spub, ask for the state of the game
-async def get(host, port):
+async def hello(host, port, ssl_context, id):
     reader, writer = await asyncio.open_connection(
         host, 
-        port
+        port,
+        ssl=ssl_context
+        )
+        
+    writer.write(b'HELLO,' + id.encode('utf-8'))
+    await writer.drain()
+    writer.close()
+
+    response = await reader.read(READ_LEN)
+    print(response)
+
+    #assert response == b'HELLO' # that they respond properly
+
+# given the server's public key, spub, ask for the state of the game
+async def get(host, port, ssl_context, id):
+    reader, writer = await asyncio.open_connection(
+        host, 
+        port,
+        ssl=ssl_context
         )
 
-    data = b'GET,'
+    data = b'GET,'+ id.encode('utf-8')
     writer.write(data)
-    
+
     response = await reader.read(READ_LEN)
     state = deserialize(response)
 
@@ -36,14 +53,14 @@ async def get(host, port):
     return state
 
 # sends a message, but does not inquire into state
-async def send(message, host, port, id:
+async def send(message, host, port, ssl_context, id):
     reader, writer = await asyncio.open_connection(
         host, 
         port
         )
     data = message.encode('utf-8') + b',' + id.encode('utf-8')
 
-    await writer.write(data)
+    writer.write(data)
     await writer.drain()
     writer.close()
 
@@ -69,12 +86,27 @@ async def run():
        letters = string.ascii_lowercase
        id = ''.join(random.choice(letters) for i in range(RAND_NAME_LEN))
 
-    # TODO make this work
-    success = await hello()
-    assert success # or ask for a different name
+    print('checking for your key and cert files... they last a day and may need to be replaced')
+    print('want to replace them if they exist? y/n')
+    nf = input()
+    if nf == 'Y' or nf == 'y':
+        if os.path.isfile(SIGF):
+            os.remove(SIGF)
+    try:
+        assert  os.path.isfile(SIGF)
+    except AssertionError as ae:
+        subprocess.call(SSL_COMMAND)
+
+    ssl_context = ssl.create_default_context(
+        ssl.Purpose.SERVER_AUTH,
+    )
+    ssl_context.check_hostname = False
+    ssl_context.load_verify_locations(SIGF)
     
+    await hello(host, port, ssl_context, id)
+
     print('Getting initial game state...')
-    state = await get(host, port, id,)
+    state = await get(host, port, ssl_context, id)
 
     print('done, running...')
     running = True
@@ -90,10 +122,11 @@ async def run():
             running = False
         else:
             if not query is None:
-                await send(query, host, port, id)
+                await send(query, host, port, ssl_context, id)
 
-            state = await get(host, port)
+            state = await get(host, port, ssl_context, id)
             gui.update(state)
             gui.draw()
 
-asyncio.run(run())
+if __name__ == '__main__':
+    asyncio.run(run())
