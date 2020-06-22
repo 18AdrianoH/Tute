@@ -1,11 +1,16 @@
 import asyncio
 import ssl
+import string
+import random
 
 from tute import deserialize
 
 from gui import Interface
 
 READ_LEN = 1 << 14 # one kilobit
+RAND_NAME_LEN = 16
+DEFAULT_HOST = 'localhost'
+DEFAULT_PORT = 5555
 
 # say hello to the server providing information about player id
 # server will say hello back
@@ -47,30 +52,34 @@ async def send(message, host, port, id:
 
 async def run():
     # the user provides the server creds
-    # TODO make a popup for this
-    print('please enter the server\'s host and then port')
+    print(f'please enter the server\'s host (blank for {DEFAULT_HOST}).')
     host = input()
+    print(f'please enter the port you wish to bind to on the server (blank for {DEFAULT_PORT})')
     port = input()
 
     if host == '':
-        host = 'localhost'
+        host = DEFAULT_HOST
     
     if port == '':
-        port = 5555
+        port = DEFAULT_PORT
     else:
         port = int(port)
 
-    # TODO add to the popup (or )
-    print('starting... enter your id')
-    id = input() # this is blocking but that is fine
+    print(f'please enter your id (blank for a random id of length {RAND_NAME_LEN})')
+    id = input()
 
+    if id == '':
+       letters = string.ascii_lowercase
+       id = ''.join(random.choice(letters) for i in range(RAND_NAME_LEN))
+
+    # TODO make this work
     success = await hello()
     assert success # or ask for a different name
     
     print('Getting initial game state...')
-    state = await get(spub, pri, host, port, id, symob)
-    print('done, running...')
+    state = await get(host, port, id,)
 
+    print('done, running...')
     running = True
 
     gui = Interface(id, state)
