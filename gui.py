@@ -4,6 +4,7 @@
 
 import pygame
 
+# TODO display play order, players, game suit
 from tute import Tute, to_dict # TODO remove this, it's only for testing
 from tute import SUITS
 from tute import VALUES
@@ -556,7 +557,7 @@ class Interface:
         if not self.sprites is None:
             clicked = self.sprites.card_clicked(coords)
             if not clicked is None:
-                play_string = 'REVEAL,,,,,,,,,,' + clicked
+                play_string = 'REVEAL,' + clicked
                 self.request = play_string
         self.action_state = 'WAITING'
 
@@ -565,7 +566,7 @@ class Interface:
             # card_clicked returns the string rep of the card
             clicked = self.sprites.card_clicked(coords)
             if not clicked is None:
-                play_string = 'PLAY,,,,,,,,,,' + clicked
+                play_string = 'PLAY,' + clicked
                 self.request = play_string
         self.action_state = 'WAITING'
 
