@@ -1,5 +1,4 @@
 # WSS (WS over TLS) client example, with a self-signed certificate
-
 import asyncio
 import ssl
 import subprocess
@@ -10,9 +9,9 @@ import random
 from gui import Interface
 from tute import deserialize
 
-from server import SIGF, KEYF, SSL_COMMAND
-from server import DEFAULT_HOST, DEFAULT_PORT
-from server import RECV
+from constants import SIGF, KEYF, SSL_COMMAND
+from constants import DEFAULT_HOST, DEFAULT_PORT
+from constants import RECV
 
 RAND_NAME_LEN = 16
 

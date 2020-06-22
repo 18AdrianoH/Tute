@@ -6,41 +6,16 @@ import os
 from tute import Tute
 from tute import serialize
 
-DEFAULT_HOST = 'localhost'
-DEFAULT_PORT = 10000
-
-# 2^12 = 256 bytes
-READ_LEN = 1 << 14
-
-KEYF = 'server.key'
-SIGF = 'server.cert'
-SSL_DAYS = '1000'
-
-SSL_COMMAND = [
-    'openssl',
-    'req',
-    '-x509',
-    '-newkey',
-    'rsa:2048',
-    '-keyout',
-    KEYF,
-    '-nodes',
-    '-out',
-    SIGF,
-    '-sha256',
-    '-days',
-    SSL_DAYS
-]
+from constants import SIGF, KEYF, SSL_COMMAND
+from constants import DEFAULT_HOST, DEFAULT_PORT
+from constants import RECV
 
 # message can be <type>, <card>, <player_id>
 # if no action b'NONE,NONE,<id>'
 # if cycle b'CYCLE,NONE,<id>'
 # else b'REVEAL,<card>,<id>' or b'PLAY,<card>,<id>'
 # response is always the same as a get response (you get the current state of the game after your edit)
-
-RECV = 1 << 14
-
-game = Tute() # this is going to be imported by test-client which is unfortunate
+game = Tute()
 
 async def echo(reader, writer):
     global RECV
