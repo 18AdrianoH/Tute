@@ -53,7 +53,7 @@ async def play_client(address, gui, id):
                 running = False
             elif query == 'CYCLE':
                 squery = b'CYCLE,NONE,' + id.encode('utf-8')
-            elif query[:4] == 'PLAY' or query[:6 == 'REVEAL']:
+            elif query[:4] == 'PLAY' or query[:6] == 'REVEAL':
                 squery = query.encode('utf-8') + b',' + id.encode('utf-8')
             
             print(f'sending {squery}')
@@ -74,7 +74,6 @@ async def play_client(address, gui, id):
     return
 
 if __name__ == '__main__':
-    print('enter id')
     # the user provides the server creds
     print(f'please enter the server\'s host (blank for {DEFAULT_HOST}).')
     host = input()

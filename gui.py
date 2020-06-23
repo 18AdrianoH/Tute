@@ -629,6 +629,7 @@ class Interface:
             if not clicked is None:
                 play_string = 'REVEAL,' + clicked
                 self.request = play_string
+                #print('requesting a reveal')
         self.action_state = 'WAITING'
 
     def execute_play(self, coords):

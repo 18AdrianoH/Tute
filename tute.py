@@ -220,13 +220,16 @@ class Tute:
                         self.round_num += 1
                         
                         winning_card = get_winning_card(self.center, self.round_suit, self.game_suit)
+                        #print(self.cards_played_by)
+                        #print(winning_card)
                         winning_player = self.cards_played_by[winning_card]
+                        #print(winning_player)
                         self.cards_played_by = {}
 
                         for won_card in self.center:
                             #if CARD_VALUE[won_card] > 0 # we can do this in the gui to save space
-                            self.player_won_cards[player_id].append(won_card)
-                            self.player_won_cards_state[player_id][won_card] = False
+                            self.player_won_cards[winning_player].append(won_card)
+                            self.player_won_cards_state[winning_player][won_card] = False
                         
                         # new round new cards
                         self.center = [None, None, None, None]
@@ -246,6 +249,8 @@ class Tute:
                         #     total_points += CARD_VALUE[card][0]
                         #     self.player_won_cards[winning_player].append(card)
                         # self.player_points[winning_player] += total_points
+
+                        print(to_dict(self))
                         
             else:
                 print('It\s not {}\'s turn'.format(player_id))
@@ -291,9 +296,11 @@ def card_beats(challenger, defender, rs, gs):
 
 # Return the card out of a card list that wins from beginning to end
 def get_winning_card(cards_list, rs, gs):
+    #print(cards_list)
     winning_card = cards_list[0]
     for card in cards_list:
         winning_card = card_beats(card, winning_card, rs, gs)
+        #print(card, winning_card)
     return winning_card
 
 # Card generation code
