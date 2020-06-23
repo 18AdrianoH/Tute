@@ -49,8 +49,10 @@ EPSILON = 10
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0,0,0)
 CARD_HEIGHT_TO_WIDTH_RATIO = 279.0/201.0 # this is width/height
-CARD_WIDTHS_PER_SCREEN = 16
+CARD_WIDTHS_PER_SCREEN = 15
+CENTER_CARD_DENSITY = 1
 CARD_DENSITY = 2 # 1/CARD_DENSITY is how much we show of each card
+WON_CARD_DENSITY = 3
 INVERSE_CENTER_X = 2
 INVERSE_CENTER_Y = 2
 SUIT_HW = 80
@@ -239,6 +241,11 @@ class PlayerSprites:
 
         # temporary helper variables
         startx, starty = self.start_position
+        # to fit a lot of won cards from other people more fairly breaking up space
+        if self.type == 'PLAYER':
+            startx += self.card_height
+        elif self.type == 'TOP':
+            startx -= self.card_height
 
         offset = int(self.card_width / CARD_DENSITY)
 
@@ -284,6 +291,12 @@ class PlayerSprites:
         self.won_card_sprites = []
 
         start_x, start_y = self.start_position
+        # copy paste lmao terrible coding practices
+        if self.type == 'PLAYER':
+            start_x += self.card_height
+        elif self.type == 'TOP':
+            start_x -= self.card_height
+        
         if self.type == 'PLAYER':
             start_y -= self.real_height # your won cards display above your play cards
         elif self.type == 'RIGHT':
@@ -294,7 +307,7 @@ class PlayerSprites:
         elif self.type == 'LEFT':
             start_x += self.real_width # for them its on the right (duh)
 
-        offset = int(self.card_width / CARD_DENSITY)
+        offset = int(self.card_width / WON_CARD_DENSITY)
 
         for i in range(0, len(won_cards), 1):
             x_pos, y_pos = None, None
@@ -472,7 +485,7 @@ class Sprites:
         center = game_state['center']
         x_i = int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width
         y_i = int(self.screen_height / INVERSE_CENTER_Y) - self.center_card_height
-        offset = int(self.center_card_width / CARD_DENSITY)
+        offset = int(self.center_card_width / CENTER_CARD_DENSITY)
         while i < len(center) and center[i] is not None:
             if i > 0:
                 x_i += offset # usual left to right action
