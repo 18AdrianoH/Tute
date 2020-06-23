@@ -372,10 +372,11 @@ class Sprites:
 
         # who is to play? (LOL WE SHOULD REUSE THE LOCATION STUFF WTF)
         self.font = pygame.font.Font('freesansbold.ttf', 20) 
-        self.text = self.font.render('Siguiente :  '+to_play, True, COLOR_BLACK) 
+        player_order_str = ','.join(player_order)
+        self.text = self.font.render('Siguiente:'+to_play + ', orden:' + player_order_str, True, COLOR_BLACK) 
         self.text_rect = self.text.get_rect()
         self.text_rect.center = (
-            int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width - SUIT_HW,
+            int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width - 2*SUIT_HW,
             int(self.screen_height / INVERSE_CENTER_Y) + 2 * EPSILON # further down!
         )
 
@@ -448,7 +449,8 @@ class Sprites:
                 if rev == True:
                     revealed_won_cards.add(card)
         
-        self.text = self.font.render('Siguiente :  ' + game_state['to play'], True, COLOR_BLACK)
+        player_order_str = ','.join(game_state['player order'])
+        self.text = self.font.render('Siguiente:' + game_state['to play'] + ', orden:' + player_order_str, True, COLOR_BLACK)
         self.text_rect = self.text.get_rect()
         self.text_rect.center = (
             int(self.screen_width / INVERSE_CENTER_X) - self.center_card_width - SUIT_HW,
