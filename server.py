@@ -68,10 +68,11 @@ if __name__ == '__main__':
 
     if host == '':
         host = DEFAULT_HOST
-
+    
     if port == '':
         port = DEFAULT_PORT
-    else:
+        
+    if type(port) != int:
         port = int(port)
 
     # create certs if necessary and use em (key encrypts, cert verifies)
