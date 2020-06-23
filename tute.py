@@ -210,7 +210,7 @@ class Tute:
                     self.cards_played_by[card] = player_id
 
                     if self.round_suit is None:
-                        self.round_suit = card[-1] # last element is always suit
+                        self.round_suit = card[-1] # first element is always suit
                     
                     self.turn += 1
 
@@ -219,6 +219,7 @@ class Tute:
                         self.turn = 0
                         self.round_num += 1
                         
+                        self.round_suit = self.center[0][-1] # make sure it's the right suit
                         winning_card = get_winning_card(self.center, self.round_suit, self.game_suit)
                         print(winning_card + 'won trying to find player in ' + str(self.cards_played_by))
                         winning_player = self.cards_played_by[winning_card]
@@ -286,7 +287,7 @@ def card_beats(challenger, defender, rs, gs):
         return challenger
     elif  s2 == gs and  s1 != gs:
         return defender
-    elif  s1 == rs and  s2 !=rs:
+    elif  s1 == rs and  s2 != rs:
         return challenger
     elif  s2 == rs and  s1 != rs:
         return defender
