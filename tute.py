@@ -220,8 +220,7 @@ class Tute:
                         self.round_num += 1
                         
                         winning_card = get_winning_card(self.center, self.round_suit, self.game_suit)
-                        #print(self.cards_played_by)
-                        #print(winning_card)
+                        print(winning_card + 'won trying to find player in ' + str(self.cards_played_by))
                         winning_player = self.cards_played_by[winning_card]
                         #print(winning_player)
                         self.cards_played_by = {}
@@ -278,6 +277,7 @@ class Tute:
 # Return the card of the two that wins
 # rs is the round suit and gs is the game suit
 def card_beats(challenger, defender, rs, gs):
+    print(f'card beats of {challenger} challenging {defender} with rs={rs}, gs={gs}')
     v1, s1 = challenger.split('_')
     v2, s2 = defender.split('_')
     if s1 == s2:
@@ -296,11 +296,10 @@ def card_beats(challenger, defender, rs, gs):
 
 # Return the card out of a card list that wins from beginning to end
 def get_winning_card(cards_list, rs, gs):
-    #print(cards_list)
+    print('get winning card of ', cards_list)
     winning_card = cards_list[0]
     for card in cards_list:
         winning_card = card_beats(card, winning_card, rs, gs)
-        #print(card, winning_card)
     return winning_card
 
 # Card generation code

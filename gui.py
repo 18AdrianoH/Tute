@@ -49,7 +49,7 @@ EPSILON = 10
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0,0,0)
 CARD_HEIGHT_TO_WIDTH_RATIO = 279.0/201.0 # this is width/height
-CARD_WIDTHS_PER_SCREEN = 14
+CARD_WIDTHS_PER_SCREEN = 16
 CARD_DENSITY = 2 # 1/CARD_DENSITY is how much we show of each card
 INVERSE_CENTER_X = 2
 INVERSE_CENTER_Y = 2
@@ -165,27 +165,27 @@ class PlayerSprites:
         self.init_card_sprites(cards) # now they are not None
         self.won_card_sprites = [] # lol it starts empty
 
-        # who's who?
-        self.font = pygame.font.Font('freesansbold.ttf', 20) 
-        self.id_text = self.font.render(player_id, True, COLOR_BLACK) 
-        self.id_text_rect = self.id_text.get_rect()
-        idx, idy = self.start_position
-        if self.type == 'PLAYER':
-            idx += int((14/CARD_DENSITY * self.card_width) + EPSILON)
-            idy = self.screen_height - 3* EPSILON
-        elif self.type == 'RIGHT':
-            idx = 1300 # LMAO
-            idy = 152
-        elif self.type == 'TOP':
-            idx = 2 * self.card_height + 25 * EPSILON
-            idy = 7 * EPSILON #int((16/CARD_DENSITY * self.card_width) + EPSILON)
-        else:
-            idx = 10 * EPSILON
-            idy = 676
-        self.id_text_rect.center = (
-            idx,
-            idy
-        )
+        # who's who? (deprecated cuz not that useful and hardcoded)
+        # self.font = pygame.font.Font('freesansbold.ttf', 20) 
+        # self.id_text = self.font.render(player_id, True, COLOR_BLACK) 
+        # self.id_text_rect = self.id_text.get_rect()
+        # idx, idy = self.start_position
+        # if self.type == 'PLAYER':
+        #     idx += int((14/CARD_DENSITY * self.card_width) + EPSILON)
+        #     idy = self.screen_height - 3* EPSILON
+        # elif self.type == 'RIGHT':
+        #     idx = 1300 # LMAO
+        #     idy = 152
+        # elif self.type == 'TOP':
+        #     idx = 2 * self.card_height + 25 * EPSILON
+        #     idy = 7 * EPSILON #int((16/CARD_DENSITY * self.card_width) + EPSILON)
+        # else:
+        #     idx = 10 * EPSILON
+        #     idy = 676
+        # self.id_text_rect.center = (
+        #     idx,
+        #     idy
+        # )
 
     # initialization helper functionality
     def init_rotation(self):
@@ -346,7 +346,7 @@ class PlayerSprites:
         for cardsp in self.won_card_sprites:
             cardsp.display(window)
         
-        window.blit(self.id_text, self.id_text_rect)
+        #window.blit(self.id_text, self.id_text_rect)
 
 # this encapsulates all of the players' cards
 # this handles basically all sprites in the game
